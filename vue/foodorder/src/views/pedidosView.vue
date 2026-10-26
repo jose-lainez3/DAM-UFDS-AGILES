@@ -275,7 +275,7 @@ export default {
         logout() {
             // TODO: limpiar sesión/token
             // localStorage.removeItem('token')
-            this.$router.push('/login')
+            this.$router.push('/')
         }
     }
 }
