@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import LoginView from '@/views/loginView.vue'
 import PedidosView from '@/views/pedidosView.vue'
-import nuevopedidoView from '@/views/nuevopedidoView.vue'
+
 
 const routes = [
   {
@@ -16,10 +16,11 @@ const routes = [
     component: PedidosView
   },
   {
-    path: '/NuevoPedido',
-    name: 'NuevoPedido',
-    component: nuevopedidoView
+    path: '/nuevopedido',
+    name: 'NuevoPedidoView',
+    component: NuevopedidoView
   },
+  
 { path: '/pedidos',
   component: PedidosView, 
   meta: { requiresAuth: true } }
@@ -31,6 +32,7 @@ const router = createRouter({
   routes
 })
 import { isAuthenticated } from '@/services/auth'
+import NuevopedidoView from '@/views/nuevopedidoView.vue'
 import NuevopedidoView from '@/views/nuevopedidoView.vue'
 import NuevopedidoView from '@/views/nuevopedidoView.vue'
 import NuevopedidoView from '@/views/nuevopedidoView.vue'
