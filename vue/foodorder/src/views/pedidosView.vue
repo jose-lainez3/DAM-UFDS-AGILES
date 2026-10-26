@@ -161,7 +161,7 @@ export default {
 
             menu: [
                 { label: 'Pedidos', to: '/pedidos' },
-                { label: 'Nuevo pedido', to: '/pedidos/nuevo' },
+                { label: 'Nuevo pedido', to: '/nuevopedido' },
                 { label: 'Cocina', to: '/cocina' },
                 { label: 'Productos', to: '/productos' },
                 { label: 'Inventario', to: '/inventario' }
