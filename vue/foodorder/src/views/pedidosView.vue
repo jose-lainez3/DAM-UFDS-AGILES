@@ -6,7 +6,7 @@
 
             <nav class="sidebar__nav" aria-label="Navegación principal">
                 <router-link v-for="item in menu" :key="item.to" :to="item.to" class="sidebar__link"
-                    active-class="sidebar__link--active">
+                    exact-active-class="sidebar__link--active">
                     {{ item.label }}
                 </router-link>
             </nav>
@@ -150,13 +150,14 @@
 
 <script>
 // import api from '@/services/api'
+import { getUser, logout as endSession } from '@/services/auth'
 
 export default {
     name: 'pedidosView',
 
     data() {
         return {
-            user: { name: 'Mesero Sala', role: 'Mesero' },
+            user: getUser() || { name: 'Invitado', role: 'Invitado' },
 
             menu: [
                 { label: 'Pedidos', to: '/pedidos' },
@@ -273,8 +274,7 @@ export default {
         },
 
         logout() {
-            // TODO: limpiar sesión/token
-            // localStorage.removeItem('token')
+            endSession()
             this.$router.push('/')
         }
     }
