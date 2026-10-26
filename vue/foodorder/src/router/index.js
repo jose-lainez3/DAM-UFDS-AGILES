@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import LoginView from '@/views/loginView.vue'
 import PedidosView from '@/views/pedidosView.vue'
+import { isAuthenticated } from '@/services/auth'
+import NuevopedidoView from '@/views/nuevopedidoView.vue'
 
 
 const routes = [
@@ -31,11 +33,8 @@ const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes
 })
-import { isAuthenticated } from '@/services/auth'
-import NuevopedidoView from '@/views/nuevopedidoView.vue'
-import NuevopedidoView from '@/views/nuevopedidoView.vue'
-import NuevopedidoView from '@/views/nuevopedidoView.vue'
-import NuevopedidoView from '@/views/nuevopedidoView.vue'
+
+
 
 router.beforeEach((to, from, next) => {
     if (to.meta.requiresAuth && !isAuthenticated()) return next('/login')
