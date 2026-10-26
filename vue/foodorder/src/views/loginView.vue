@@ -48,7 +48,8 @@
 </template>
 
 <script>
-// import api from '@/services/api'
+// import api from '@/services/api'  // cuando tengas backend
+import { login } from '@/services/auth'
 
 export default {
     name: 'loginView',
@@ -77,14 +78,10 @@ export default {
             this.loading = true
 
             try {
-                // TODO: reemplazar por tu llamada real a la API
-                // const { data } = await api.post('/auth/login', {
-                //     username: this.username,
-                //     password: this.password
-                // })
-                // localStorage.setItem('token', data.token)
-                // this.$router.push('/dashboard')
-                await new Promise((resolve) => setTimeout(resolve, 800))
+                // Login simulado (src/services/auth.js).
+                // Con backend: const { data } = await api.post('/auth/login', {...})
+                await login(this.username.trim(), this.password)
+                this.$router.push('/pedidos')
             } catch (e) {
                 this.error = 'Usuario o contraseña incorrectos. Revisa tus datos e inténtalo de nuevo.'
             } finally {
