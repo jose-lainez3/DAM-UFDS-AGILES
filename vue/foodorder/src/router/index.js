@@ -6,7 +6,7 @@ import PedidosView from '@/views/pedidosView.vue'
 const routes = [
   {
     path: '/',
-    name: 'loginView',
+    name: 'login',
     component: LoginView
   },
   {
