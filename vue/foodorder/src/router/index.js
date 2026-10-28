@@ -23,7 +23,7 @@ const routes = [
     name: 'NuevoPedidoView',
     component: NuevopedidoView
   },{
-    path: '/gestionpersonal',
+    path: '/admin/usuarios',
     name: 'GestionPersonalView',
     component: GestionPersonalView
   },
