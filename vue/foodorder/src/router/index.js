@@ -4,6 +4,7 @@ import LoginView from '@/views/loginView.vue'
 import PedidosView from '@/views/pedidosView.vue'
 import { isAuthenticated } from '@/services/auth'
 import NuevopedidoView from '@/views/nuevopedidoView.vue'
+import GestionPersonalView from '@/views/GestionPersonalView.vue'
 
 
 const routes = [
@@ -21,6 +22,10 @@ const routes = [
     path: '/nuevopedido',
     name: 'NuevoPedidoView',
     component: NuevopedidoView
+  },{
+    path: '/gestionpersonal',
+    name: 'GestionPersonal',
+    component: GestionPersonalView
   },
   
 { path: '/pedidos',
