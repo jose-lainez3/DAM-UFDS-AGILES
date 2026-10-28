@@ -24,7 +24,7 @@ const routes = [
     component: NuevopedidoView
   },{
     path: '/gestionpersonal',
-    name: 'GestionPersonal',
+    name: 'GestionPersonalView',
     component: GestionPersonalView
   },
   
