@@ -94,17 +94,17 @@
             </header>
 
             <main class="content">
-                <!-- Título + Filtros + Botón Nuevo -->
+                <!-- Toolbar -->
                 <div class="toolbar">
                     <h1 class="toolbar__title">Personal</h1>
 
                     <input v-model="search" type="search" class="toolbar__search"
-                        placeholder="Buscar por nombre, email o ID" aria-label="Buscar personal" />
+                        placeholder="Buscar por usuario o correo" aria-label="Buscar personal" />
 
                     <select v-model="roleFilter" class="toolbar__select" aria-label="Filtrar por rol">
                         <option value="todos">Rol: Todos</option>
-                        <option v-for="(label, key) in roleLabels" :key="key" :value="key">
-                            {{ label }}
+                        <option v-for="r in rolesList" :key="r.id" :value="r.id">
+                            {{ r.nombre }}
                         </option>
                     </select>
 
@@ -113,7 +113,7 @@
                     </button>
                 </div>
 
-                <!-- Resumen de empleados -->
+                <!-- Stats Cards -->
                 <section class="stats" aria-label="Resumen de empleados">
                     <article class="stat">
                         <strong class="stat__value">{{ staffStats.total }}</strong>
@@ -121,15 +121,15 @@
                     </article>
                     <article class="stat">
                         <strong class="stat__value">{{ staffStats.active }}</strong>
-                        <span class="stat__label">En servicio hoy</span>
+                        <span class="stat__label">Activos</span>
                     </article>
                     <article class="stat">
-                        <strong class="stat__value">{{ staffStats.waiters }}</strong>
-                        <span class="stat__label">Meseros</span>
+                        <strong class="stat__value">{{ staffStats.inactive }}</strong>
+                        <span class="stat__label">Inactivos</span>
                     </article>
                     <article class="stat">
-                        <strong class="stat__value">{{ staffStats.kitchen }}</strong>
-                        <span class="stat__label">Personal de cocina</span>
+                        <strong class="stat__value">{{ rolesList.length }}</strong>
+                        <span class="stat__label">Roles configurados</span>
                     </article>
                 </section>
 
@@ -141,48 +141,43 @@
                         <table class="staff-table">
                             <thead>
                                 <tr>
-                                    <th>Empleado</th>
-                                    <th>Contacto</th>
+                                    <th>Usuario</th>
+                                    <th>Correo</th>
                                     <th>Rol</th>
-                                    <th>Turno</th>
                                     <th>Estado</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-if="loading">
-                                    <td colspan="6" class="orders__empty">Cargando personal desde la base de datos...
+                                    <td colspan="5" class="orders__empty">Cargando personal desde la base de datos...
                                     </td>
                                 </tr>
                                 <tr v-else-if="!loading && !pagedStaff.length">
-                                    <td colspan="6" class="orders__empty">No se encontraron empleados registrados.</td>
+                                    <td colspan="5" class="orders__empty">No se encontraron empleados registrados.</td>
                                 </tr>
                                 <tr v-for="member in pagedStaff" :key="member.id">
                                     <td>
                                         <div class="staff-cell">
-                                            <span class="staff-avatar">{{ getInitials(member.name) }}</span>
+                                            <span class="staff-avatar">{{ getInitials(member.username) }}</span>
                                             <div>
-                                                <div class="staff-name">{{ member.name }}</div>
+                                                <div class="staff-name">{{ member.username }}</div>
                                                 <small class="staff-id">ID: #{{ member.id }}</small>
                                             </div>
                                         </div>
                                     </td>
+                                    <td>{{ member.correo }}</td>
                                     <td>
-                                        <div>{{ member.email }}</div>
-                                        <small class="text-muted">{{ member.phone }}</small>
-                                    </td>
-                                    <td>
-                                        <span class="badge" :class="'badge--role-' + member.role">
-                                            {{ roleLabels[member.role] || member.role }}
+                                        <span class="badge" :class="'badge--role-' + getRoleSlug(member)">
+                                            {{ member.rol ? member.rol.nombre : 'Sin rol' }}
                                         </span>
                                     </td>
-                                    <td>{{ member.shift }}</td>
                                     <td>
                                         <button type="button" class="status-pill"
-                                            :class="member.active ? 'status-pill--active' : 'status-pill--inactive'"
+                                            :class="isUserActive(member.estado) ? 'status-pill--active' : 'status-pill--inactive'"
                                             @click="toggleStaffStatus(member)">
                                             <span class="status-pill__dot"></span>
-                                            {{ member.active ? 'Activo' : 'Inactivo' }}
+                                            {{ isUserActive(member.estado) ? 'Activo' : 'Inactivo' }}
                                         </button>
                                     </td>
                                     <td>
@@ -222,7 +217,7 @@
             </main>
         </div>
 
-        <!-- ============ Modal Crear/Editar Empleado ============ -->
+        <!-- ============ Modal Crear/Editar Usuario ============ -->
         <div v-if="showModal" class="modal-backdrop" @click.self="closeModal">
             <div class="modal">
                 <header class="modal__header">
@@ -232,39 +227,41 @@
 
                 <form @submit.prevent="saveEmployee" class="modal__form">
                     <div class="form-group">
-                        <label for="emp-name">Nombre completo</label>
-                        <input id="emp-name" v-model="form.name" type="text" required
-                            placeholder="Ej. Carlos Mendoza" />
+                        <label for="emp-user">Nombre de usuario (username)</label>
+                        <input id="emp-user" v-model="form.username" type="text" required placeholder="Ej. carlos_m" />
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="emp-email">Correo electrónico</label>
-                            <input id="emp-email" v-model="form.email" type="email" required
-                                placeholder="carlos@foodorder.com" />
-                        </div>
-                        <div class="form-group">
-                            <label for="emp-phone">Teléfono</label>
-                            <input id="emp-phone" v-model="form.phone" type="tel" required
-                                placeholder="+503 7000-0000" />
-                        </div>
+                    <div class="form-group">
+                        <label for="emp-email">Correo electrónico</label>
+                        <input id="emp-email" v-model="form.correo" type="email" required
+                            placeholder="carlos@foodorder.com" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="emp-pass">
+                            Contraseña
+                            <small v-if="isEditing" class="text-muted">(Dejar en blanco para conservar la
+                                actual)</small>
+                        </label>
+                        <input id="emp-pass" v-model="form.clave" type="password" :required="!isEditing" minlength="6"
+                            placeholder="Mínimo 6 caracteres" />
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
                             <label for="emp-role">Rol asignado</label>
-                            <select id="emp-role" v-model="form.role" required>
-                                <option v-for="(label, key) in roleLabels" :key="key" :value="key">
-                                    {{ label }}
+                            <select id="emp-role" v-model="form.rol_id" required>
+                                <option value="" disabled>Selecciona un rol</option>
+                                <option v-for="r in rolesList" :key="r.id" :value="r.id">
+                                    {{ r.nombre }}
                                 </option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="emp-shift">Turno</label>
-                            <select id="emp-shift" v-model="form.shift" required>
-                                <option value="Mañana (07:00 - 15:00)">Mañana (07:00 - 15:00)</option>
-                                <option value="Tarde (14:00 - 22:00)">Tarde (14:00 - 22:00)</option>
-                                <option value="Completo">Completo</option>
+                            <label for="emp-status">Estado</label>
+                            <select id="emp-status" v-model="form.estado" required>
+                                <option value="activo">Activo</option>
+                                <option value="inactivo">Inactivo</option>
                             </select>
                         </div>
                     </div>
@@ -303,12 +300,13 @@ export default {
                 { label: 'Inventario', to: '/inventario' }
             ],
 
-            roleLabels: {
-                administrador: 'Administrador',
-                mesero: 'Mesero',
-                cocinero: 'Cocinero',
-                cajero: 'Cajero'
-            },
+            // Lista dinámica de roles desde la base de datos o por defecto
+            rolesList: [
+                { id: 1, nombre: 'Administrador' },
+                { id: 2, nombre: 'Mesero' },
+                { id: 3, nombre: 'Cocinero' },
+                { id: 4, nombre: 'Cajero' }
+            ],
 
             search: '',
             roleFilter: 'todos',
@@ -319,12 +317,11 @@ export default {
             isEditing: false,
             form: {
                 id: null,
-                name: '',
-                email: '',
-                phone: '',
-                role: 'mesero',
-                shift: 'Mañana (07:00 - 15:00)',
-                active: true
+                username: '',
+                correo: '',
+                clave: '',
+                rol_id: '',
+                estado: 'activo'
             },
 
             staff: []
@@ -344,11 +341,11 @@ export default {
         filteredStaff() {
             const term = this.search.trim().toLowerCase()
             return this.staff.filter((member) => {
-                const matchesRole = this.roleFilter === 'todos' || member.role === this.roleFilter
+                const matchesRole = this.roleFilter === 'todos' || String(member.rol_id) === String(this.roleFilter)
                 const matchesText =
                     !term ||
-                    (member.name && member.name.toLowerCase().includes(term)) ||
-                    (member.email && member.email.toLowerCase().includes(term)) ||
+                    (member.username && member.username.toLowerCase().includes(term)) ||
+                    (member.correo && member.correo.toLowerCase().includes(term)) ||
                     String(member.id).includes(term)
                 return matchesRole && matchesText
             })
@@ -374,9 +371,8 @@ export default {
         staffStats() {
             return {
                 total: this.staff.length,
-                active: this.staff.filter((s) => s.active).length,
-                waiters: this.staff.filter((s) => s.role === 'mesero').length,
-                kitchen: this.staff.filter((s) => s.role === 'cocinero').length
+                active: this.staff.filter((s) => this.isUserActive(s.estado)).length,
+                inactive: this.staff.filter((s) => !this.isUserActive(s.estado)).length
             }
         }
     },
@@ -391,7 +387,7 @@ export default {
     },
 
     async created() {
-        await this.fetchStaff()
+        await Promise.all([this.fetchRoles(), this.fetchStaff()])
     },
 
     mounted() {
@@ -407,26 +403,50 @@ export default {
     },
 
     methods: {
-        async fetchStaff() {
-            this.loading = true
-            try {
-                const response = await api.get('/personal')
-                this.staff = response.data
-            } catch (error) {
-                console.error('Error al cargar personal:', error)
-                alert('No se pudo conectar con la base de datos para cargar el personal.')
-            } finally {
-                this.loading = false
-            }
+        isUserActive(estado) {
+            return String(estado).toLowerCase() === 'activo'
+        },
+
+        getRoleSlug(member) {
+            const name = member.rol?.nombre ? member.rol.nombre.toLowerCase() : ''
+            if (name.includes('admin')) return 'administrador'
+            if (name.includes('meser')) return 'mesero'
+            if (name.includes('cocin')) return 'cocinero'
+            if (name.includes('cajer')) return 'cajero'
+            return 'default'
         },
 
         getInitials(name) {
-            return (name || 'NN')
+            return (name || 'US')
                 .split(' ')
                 .map((w) => w[0])
                 .join('')
                 .slice(0, 2)
                 .toUpperCase()
+        },
+
+        async fetchRoles() {
+            try {
+                const response = await api.get('/roles')
+                if (response.data && response.data.length) {
+                    this.rolesList = response.data
+                }
+            } catch (e) {
+                // Si no existe la ruta /roles, conserva los roles predeterminados
+            }
+        },
+
+        async fetchStaff() {
+            this.loading = true
+            try {
+                const response = await api.get('/usuarios')
+                this.staff = Array.isArray(response.data) ? response.data : []
+            } catch (error) {
+                console.error('Error al cargar personal:', error)
+                alert('No se pudo conectar con la base de datos para cargar los usuarios.')
+            } finally {
+                this.loading = false
+            }
         },
 
         toggleMenu() {
@@ -458,19 +478,25 @@ export default {
             this.isEditing = false
             this.form = {
                 id: null,
-                name: '',
-                email: '',
-                phone: '',
-                role: 'mesero',
-                shift: 'Mañana (07:00 - 15:00)',
-                active: true
+                username: '',
+                correo: '',
+                clave: '',
+                rol_id: this.rolesList.length ? this.rolesList[0].id : 1,
+                estado: 'activo'
             }
             this.showModal = true
         },
 
         openEditModal(member) {
             this.isEditing = true
-            this.form = { ...member }
+            this.form = {
+                id: member.id,
+                username: member.username,
+                correo: member.correo,
+                clave: '', // vacío para que no sobreescriba si no se edita
+                rol_id: member.rol_id,
+                estado: member.estado || 'activo'
+            }
             this.showModal = true
         },
 
@@ -481,45 +507,67 @@ export default {
         async saveEmployee() {
             this.submitting = true
             try {
+                const payload = { ...this.form }
+                if (this.isEditing && !payload.clave) {
+                    delete payload.clave // Si está vacía en edición, Laravel no la tocará
+                }
+
                 if (this.isEditing) {
-                    const { data } = await api.put(`/personal/${this.form.id}`, this.form)
+                    const { data } = await api.put(`/usuarios/${this.form.id}`, payload)
+                    const updatedUser = data.data || data
                     const index = this.staff.findIndex((s) => s.id === this.form.id)
                     if (index !== -1) {
-                        this.staff.splice(index, 1, data || { ...this.form })
+                        // Conservar el objeto rol si no vino embebido
+                        if (!updatedUser.rol && this.staff[index].rol) {
+                            updatedUser.rol = this.rolesList.find(r => r.id === updatedUser.rol_id) || this.staff[index].rol
+                        }
+                        this.staff.splice(index, 1, updatedUser)
                     }
                 } else {
-                    const { data } = await api.post('/personal', this.form)
-                    this.staff.unshift(data)
+                    const { data } = await api.post('/usuarios', payload)
+                    const newUser = data.data || data
+                    if (!newUser.rol) {
+                        newUser.rol = this.rolesList.find(r => r.id === newUser.rol_id)
+                    }
+                    this.staff.unshift(newUser)
                 }
                 this.closeModal()
             } catch (error) {
                 console.error('Error al guardar empleado:', error)
-                alert('Error al guardar el registro en el servidor.')
+                const validationErrors = error.response?.data?.errors
+                if (validationErrors) {
+                    const msg = Object.values(validationErrors).flat().join('\n')
+                    alert(`Errores de validación:\n${msg}`)
+                } else {
+                    alert(error.response?.data?.message || 'Error al guardar el registro en el servidor.')
+                }
             } finally {
                 this.submitting = false
             }
         },
 
         async toggleStaffStatus(member) {
-            const previousStatus = member.active
-            member.active = !member.active
+            const nuevoEstado = this.isUserActive(member.estado) ? 'inactivo' : 'activo'
+            const estadoAnterior = member.estado
+            member.estado = nuevoEstado
+
             try {
-                await api.patch(`/personal/${member.id}`, { active: member.active })
+                await api.put(`/usuarios/${member.id}`, { estado: nuevoEstado })
             } catch (error) {
                 console.error('Error al actualizar estado:', error)
-                member.active = previousStatus
-                alert('No se pudo actualizar el estado en el servidor.')
+                member.estado = estadoAnterior
+                alert('No se pudo actualizar el estado.')
             }
         },
 
         async confirmDelete(member) {
-            if (confirm(`¿Estás seguro de que deseas eliminar a ${member.name}?`)) {
+            if (confirm(`¿Estás seguro de que deseas eliminar a ${member.username}?`)) {
                 try {
-                    await api.delete(`/personal/${member.id}`)
+                    await api.delete(`/usuarios/${member.id}`)
                     this.staff = this.staff.filter((s) => s.id !== member.id)
                 } catch (error) {
                     console.error('Error al eliminar empleado:', error)
-                    alert('No se pudo eliminar el empleado en el servidor.')
+                    alert('No se pudo eliminar el empleado.')
                 }
             }
         },
@@ -564,7 +612,7 @@ export default {
     background: var(--surface);
 }
 
-/* ---------- Sidebar ---------- */
+/* Sidebar */
 .sidebar {
     display: flex;
     flex-direction: column;
@@ -607,12 +655,6 @@ export default {
     background: var(--saffron);
 }
 
-.sidebar__link:focus-visible,
-.sidebar__logout:focus-visible {
-    outline: 2px solid var(--saffron);
-    outline-offset: 2px;
-}
-
 .sidebar__logout {
     margin-top: auto;
     padding: 0.7rem 0.9rem;
@@ -630,7 +672,7 @@ export default {
     background: var(--pine-700);
 }
 
-/* ---------- Main & Topbar ---------- */
+/* Main & Topbar */
 .main {
     display: flex;
     flex-direction: column;
@@ -751,7 +793,7 @@ export default {
     transform: rotate(180deg);
 }
 
-/* ---------- Dropdown ---------- */
+/* Dropdown */
 .user-menu {
     position: absolute;
     top: calc(100% + 8px);
@@ -851,7 +893,7 @@ export default {
     transform: translateY(-6px);
 }
 
-/* ---------- Contenido Principal ---------- */
+/* Content */
 .content {
     display: flex;
     flex-direction: column;
@@ -936,7 +978,7 @@ export default {
     background: var(--surface);
 }
 
-/* ---------- Stats Cards ---------- */
+/* Stats */
 .stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -972,7 +1014,7 @@ export default {
     font-weight: 700;
 }
 
-/* ---------- Tabla Personal ---------- */
+/* Table */
 .table-wrap {
     overflow-x: auto;
     background: #fff;
@@ -982,7 +1024,7 @@ export default {
 
 .staff-table {
     width: 100%;
-    min-width: 700px;
+    min-width: 600px;
     border-collapse: collapse;
     font-size: 0.95rem;
 }
@@ -1042,9 +1084,10 @@ export default {
 
 .text-muted {
     color: var(--ink-soft);
+    font-size: 0.8rem;
 }
 
-/* Badges de Roles */
+/* Badges */
 .badge {
     display: inline-block;
     padding: 0.25rem 0.7rem;
@@ -1074,7 +1117,12 @@ export default {
     color: var(--prep-fg);
 }
 
-/* Botón de Estado Activo/Inactivo */
+.badge--role-default {
+    background: var(--surface);
+    color: var(--ink);
+}
+
+/* Status Pill */
 .status-pill {
     display: inline-flex;
     align-items: center;
@@ -1140,7 +1188,7 @@ export default {
     color: var(--chili);
 }
 
-/* ---------- Paginación ---------- */
+/* Paginación */
 .pager {
     display: flex;
     align-items: center;
@@ -1184,7 +1232,7 @@ export default {
     cursor: not-allowed;
 }
 
-/* ---------- Modal ---------- */
+/* Modal */
 .modal-backdrop {
     position: fixed;
     inset: 0;
@@ -1276,7 +1324,6 @@ export default {
     margin-top: 0.5rem;
 }
 
-/* ---------- Responsive ---------- */
 @media (max-width: 1000px) {
     .toolbar {
         grid-template-columns: 1fr 1fr;
