@@ -20,7 +20,7 @@
             <header class="topbar">
                 <nav class="topbar__crumbs" aria-label="Ruta">Inicio / Pedidos</nav>
 
-                <div class="topbar__user">
+                <div class="topbar__user" ref="userMenuRef">
                     <button type="button" class="topbar__bell" aria-label="Notificaciones">
                         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
                             <path fill="currentColor"
@@ -28,8 +28,64 @@
                         </svg>
                         <span class="topbar__dot" />
                     </button>
-                    <span class="topbar__avatar" aria-hidden="true">{{ initials }}</span>
-                    <span class="topbar__role">{{ user.role }} ▾</span>
+
+                    <!-- Botón disparador del menú -->
+                    <button type="button" class="user-trigger" :class="{ 'user-trigger--active': isMenuOpen }"
+                        :aria-expanded="isMenuOpen" aria-haspopup="menu" @click="toggleMenu">
+                        <span class="topbar__avatar" aria-hidden="true">{{ initials }}</span>
+                        <span class="topbar__role">{{ user.role }}</span>
+                        <span class="topbar__arrow" :class="{ 'topbar__arrow--up': isMenuOpen }">▾</span>
+                    </button>
+
+                    <!-- Menú desplegable con opciones de administración -->
+                    <transition name="dropdown-fade">
+                        <div v-if="isMenuOpen" class="user-menu" role="menu">
+                            <div class="user-menu__header">
+                                <span class="user-menu__name">{{ user.name }}</span>
+                                <span class="user-menu__badge">{{ user.role }}</span>
+                            </div>
+
+                            <div class="user-menu__divider"></div>
+
+                            <button type="button" class="user-menu__item" role="menuitem"
+                                @click="goToAdmin('/admin/usuarios')">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                    <path
+                                        d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+                                </svg>
+                                Gestión de Personal
+                            </button>
+
+                            <button type="button" class="user-menu__item" role="menuitem"
+                                @click="goToAdmin('/admin/reportes')">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                    <path
+                                        d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" />
+                                </svg>
+                                Reportes y Métricas
+                            </button>
+
+                            <button type="button" class="user-menu__item" role="menuitem"
+                                @click="goToAdmin('/admin/configuracion')">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                    <path
+                                        d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+                                </svg>
+                                Configuración del Local
+                            </button>
+
+                            <div class="user-menu__divider"></div>
+
+                            <button type="button" class="user-menu__item user-menu__item--danger" role="menuitem"
+                                @click="logout">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                    <path
+                                        d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" />
+                                </svg>
+                                Cerrar sesión
+                            </button>
+                        </div>
+                    </transition>
                 </div>
             </header>
 
@@ -157,7 +213,8 @@ export default {
 
     data() {
         return {
-            user: getUser() || { name: 'Invitado', role: 'Invitado' },
+            user: getUser() || { name: 'Administrador', role: 'Administrador' },
+            isMenuOpen: false,
 
             menu: [
                 { label: 'Pedidos', to: '/pedidos' },
@@ -178,8 +235,6 @@ export default {
             page: 1,
             pageSize: 5,
 
-            // TODO: reemplazar estos datos de ejemplo por la respuesta de tu API
-            // (en created(): const { data } = await api.get('/pedidos'))
             orders: [
                 { id: 101, customer: 'Cliente 1', table: 2, total: 24.5, status: 'preparacion' },
                 { id: 102, customer: 'Cliente 2', table: 4, total: 12.0, status: 'pendiente' },
@@ -199,7 +254,7 @@ export default {
 
     computed: {
         initials() {
-            return this.user.name
+            return (this.user.name || 'Admin')
                 .split(' ')
                 .map((word) => word[0])
                 .join('')
@@ -256,7 +311,39 @@ export default {
         }
     },
 
+    mounted() {
+        document.addEventListener('click', this.handleClickOutside)
+    },
+
+    beforeUnmount() {
+        document.removeEventListener('click', this.handleClickOutside)
+    },
+
+    // Compatibilidad para Vue 2
+    beforeDestroy() {
+        document.removeEventListener('click', this.handleClickOutside)
+    },
+
     methods: {
+        toggleMenu() {
+            this.isMenuOpen = !this.isMenuOpen
+        },
+
+        closeMenu() {
+            this.isMenuOpen = false
+        },
+
+        handleClickOutside(event) {
+            if (this.$refs.userMenuRef && !this.$refs.userMenuRef.contains(event.target)) {
+                this.closeMenu()
+            }
+        },
+
+        goToAdmin(route) {
+            this.closeMenu()
+            this.$router.push(route)
+        },
+
         formatMoney(value) {
             return `$${Number(value).toFixed(2)}`
         },
@@ -274,6 +361,7 @@ export default {
         },
 
         logout() {
+            this.closeMenu()
             endSession()
             this.$router.push('/')
         }
@@ -402,6 +490,7 @@ export default {
 }
 
 .topbar__user {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -436,6 +525,26 @@ export default {
     box-sizing: content-box;
 }
 
+/* ---------- Botón y Menú Desplegable Administrador ---------- */
+.user-trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.35rem 0.65rem;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font: inherit;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.user-trigger:hover,
+.user-trigger--active {
+    background: var(--surface);
+    border-color: var(--line);
+}
+
 .topbar__avatar {
     display: grid;
     place-items: center;
@@ -451,6 +560,116 @@ export default {
 .topbar__role {
     font-size: 0.9rem;
     font-weight: 600;
+    color: var(--ink);
+}
+
+.topbar__arrow {
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    transition: transform 0.2s ease;
+}
+
+.topbar__arrow--up {
+    transform: rotate(180deg);
+}
+
+.user-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 230px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(16, 48, 43, 0.1), 0 8px 10px -6px rgba(16, 48, 43, 0.05);
+    padding: 0.5rem;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+}
+
+.user-menu__header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem 0.6rem;
+}
+
+.user-menu__name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--pine-900);
+}
+
+.user-menu__badge {
+    align-self: flex-start;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.15rem 0.45rem;
+    background: var(--pending-bg);
+    color: var(--pending-fg);
+    border-radius: 4px;
+}
+
+.user-menu__divider {
+    height: 1px;
+    background: var(--line);
+    margin: 0.35rem 0;
+}
+
+.user-menu__item {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    width: 100%;
+    padding: 0.6rem 0.65rem;
+    font: inherit;
+    font-size: 0.88rem;
+    color: var(--ink);
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.user-menu__item svg {
+    color: var(--ink-soft);
+    flex-shrink: 0;
+}
+
+.user-menu__item:hover {
+    background: var(--surface);
+    color: var(--pine-900);
+}
+
+.user-menu__item:hover svg {
+    color: var(--pine-700);
+}
+
+.user-menu__item--danger {
+    color: var(--chili);
+}
+
+.user-menu__item--danger svg {
+    color: var(--chili);
+}
+
+.user-menu__item--danger:hover {
+    background: #fdf2f0;
+    color: var(--chili);
+}
+
+.dropdown-fade-enter-active,
+.dropdown-fade-leave-active {
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.dropdown-fade-enter-from,
+.dropdown-fade-leave-to {
+    opacity: 0;
+    transform: translateY(-6px);
 }
 
 /* ---------- Contenido ---------- */
