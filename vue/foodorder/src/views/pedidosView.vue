@@ -45,6 +45,7 @@
                                 <span class="user-menu__badge">{{ user.role }}</span>
                             </div>
 
+                            <template v-if="isAdmin">
                             <div class="user-menu__divider"></div>
 
                             <button type="button" class="user-menu__item" role="menuitem"
@@ -73,6 +74,7 @@
                                 </svg>
                                 Configuración del Local
                             </button>
+                            </template>
 
                             <div class="user-menu__divider"></div>
 
@@ -90,6 +92,11 @@
             </header>
 
             <main class="content">
+                <p v-if="error" class="alert" role="alert">
+                    {{ error }}
+                    <button type="button" class="link-btn" @click="loadAll">Reintentar</button>
+                </p>
+
                 <!-- Título + filtros -->
                 <div class="toolbar">
                     <h1 class="toolbar__title">Pedidos</h1>
@@ -134,10 +141,13 @@
                     <h2 class="section-title">Mesas</h2>
                     <div class="tables">
                         <div v-for="table in tables" :key="table.id" class="table-card"
-                            :class="table.occupied ? 'table-card--busy' : 'table-card--free'">
-                            <span>Mesa {{ table.id }}</span>
-                            <strong>{{ table.occupied ? 'Ocupada' : 'Libre' }}</strong>
+                            :class="[tableClass(table), { 'table-card--clickable': table.estado === 'disponible' }]"
+                            :title="table.estado === 'disponible' ? 'Crear pedido en esta mesa' : ''"
+                            @click="table.estado === 'disponible' && newOrder(table.id)">
+                            <span>Mesa {{ table.numero_mesa }}</span>
+                            <strong>{{ tableLabel(table) }}</strong>
                         </div>
+                        <p v-if="!loading && !tables.length" class="orders__empty">No hay mesas registradas.</p>
                     </div>
                 </section>
 
@@ -174,7 +184,10 @@
                                         </button>
                                     </td>
                                 </tr>
-                                <tr v-if="!pagedOrders.length">
+                                <tr v-if="loading && !orders.length">
+                                    <td colspan="6" class="orders__empty">Cargando pedidos…</td>
+                                </tr>
+                                <tr v-else-if="!pagedOrders.length">
                                     <td colspan="6" class="orders__empty">No hay pedidos que coincidan.</td>
                                 </tr>
                             </tbody>
@@ -205,16 +218,21 @@
 </template>
 
 <script>
-// import api from '@/services/api'
-import { getUser, logout as endSession } from '@/services/auth'
+import api from '@/services/api'
+import { getUser, logout as endSession, isAdmin } from '@/services/auth'
+import { errorMessage, fullName, isSameDay, ESTADOS_PEDIDO } from '@/services/utils'
 
 export default {
     name: 'pedidosView',
 
     data() {
         return {
-            user: getUser() || { name: 'Administrador', role: 'Administrador' },
+            user: getUser() || { name: 'Usuario', role: '' },
+            isAdmin: isAdmin(),
             isMenuOpen: false,
+            loading: false,
+            error: '',
+            refreshTimer: null,
 
             menu: [
                 { label: 'Pedidos', to: '/pedidos' },
@@ -224,31 +242,16 @@ export default {
                 { label: 'Inventario', to: '/inventario' }
             ],
 
-            statusLabels: {
-                pendiente: 'Pendiente',
-                preparacion: 'En preparación',
-                entregado: 'Entregado'
-            },
+            statusLabels: ESTADOS_PEDIDO,
 
             search: '',
             statusFilter: 'todos',
             page: 1,
             pageSize: 5,
 
-            orders: [
-                { id: 101, customer: 'Cliente 1', table: 2, total: 24.5, status: 'preparacion' },
-                { id: 102, customer: 'Cliente 2', table: 4, total: 12.0, status: 'pendiente' },
-                { id: 103, customer: 'Cliente 3', table: 1, total: 31.75, status: 'entregado' }
-            ],
-
-            tables: [
-                { id: 1, occupied: false },
-                { id: 2, occupied: true },
-                { id: 3, occupied: false },
-                { id: 4, occupied: true },
-                { id: 5, occupied: false },
-                { id: 6, occupied: false }
-            ]
+            // Datos reales de la API (GET /pedidos y GET /mesas)
+            orders: [],
+            tables: []
         }
     },
 
@@ -297,7 +300,9 @@ export default {
                 pending: count('pendiente'),
                 preparing: count('preparacion'),
                 delivered: count('entregado'),
-                sales: this.orders.reduce((sum, o) => sum + o.total, 0)
+                sales: this.orders
+                    .filter((o) => o.status !== 'cancelado' && isSameDay(o.fecha))
+                    .reduce((sum, o) => sum + o.total, 0)
             }
         }
     },
@@ -313,18 +318,51 @@ export default {
 
     mounted() {
         document.addEventListener('click', this.handleClickOutside)
+        this.loadAll()
+        // Refresco automático para ver pedidos nuevos y cambios de estado
+        this.refreshTimer = setInterval(() => this.loadAll(true), 30000)
     },
 
     beforeUnmount() {
         document.removeEventListener('click', this.handleClickOutside)
-    },
-
-    // Compatibilidad para Vue 2
-    beforeDestroy() {
-        document.removeEventListener('click', this.handleClickOutside)
+        clearInterval(this.refreshTimer)
     },
 
     methods: {
+        async loadAll(silent = false) {
+            if (!silent) this.loading = true
+            try {
+                const [pedidos, mesas] = await Promise.all([api.get('/pedidos'), api.get('/mesas')])
+
+                this.orders = pedidos.data.map((p) => ({
+                    id: p.id,
+                    customer: fullName(p.cliente),
+                    table: p.mesa ? p.mesa.numero_mesa : '—',
+                    total: Number(p.precio_total),
+                    status: p.estado,
+                    fecha: p.fecha_pedido || p.created_at
+                }))
+                this.tables = mesas.data
+                this.error = ''
+            } catch (e) {
+                this.error = errorMessage(e, 'No se pudieron cargar los pedidos.')
+            } finally {
+                this.loading = false
+            }
+        },
+
+        tableClass(table) {
+            if (table.estado === 'ocupada') return 'table-card--busy'
+            if (table.estado === 'reservada') return 'table-card--reserved'
+            return 'table-card--free'
+        },
+
+        tableLabel(table) {
+            if (table.estado === 'ocupada') return 'Ocupada'
+            if (table.estado === 'reservada') return 'Reservada'
+            return 'Libre'
+        },
+
         toggleMenu() {
             this.isMenuOpen = !this.isMenuOpen
         },
@@ -345,15 +383,17 @@ export default {
         },
 
         formatMoney(value) {
-            return `$${Number(value).toFixed(2)}`
+            return `$${Number(value || 0).toFixed(2)}`
         },
 
         goTo(n) {
             if (n >= 1 && n <= this.totalPages) this.page = n
         },
 
-        newOrder() {
-            this.$router.push('/pedidos/nuevo')
+        newOrder(mesaId) {
+            // Si se llama desde el botón, Vue pasa el evento de click: solo aceptamos un id numérico
+            const query = typeof mesaId === 'number' ? { mesa: mesaId } : {}
+            this.$router.push({ path: '/nuevopedido', query })
         },
 
         viewOrder(order) {
@@ -811,6 +851,36 @@ export default {
     border-color: #f0b9ae;
 }
 
+.table-card--reserved {
+    color: var(--pending-fg);
+    background: var(--pending-bg);
+    border-color: #ecd596;
+}
+
+.table-card--clickable {
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.15s;
+}
+
+.table-card--clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px -6px rgba(16, 48, 43, 0.35);
+}
+
+.alert {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0;
+    padding: 0.75rem 1rem;
+    font-size: 0.92rem;
+    color: var(--busy-fg);
+    background: #fbebe8;
+    border-left: 4px solid var(--chili);
+    border-radius: 10px;
+}
+
 /* ---------- Tabla de pedidos ---------- */
 .table-wrap {
     overflow-x: auto;
@@ -875,9 +945,15 @@ export default {
     background: var(--prep-bg);
 }
 
-.badge--entregado {
+.badge--entregado,
+.badge--pagado {
     color: var(--done-fg);
     background: var(--done-bg);
+}
+
+.badge--cancelado {
+    color: var(--busy-fg);
+    background: var(--busy-bg);
 }
 
 .link-btn {

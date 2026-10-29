@@ -39,8 +39,7 @@
 
                 <p class="form__register">
                     ¿No tienes cuenta?
-                    <!-- Con vue-router: <router-link to="/register">Regístrate</router-link> -->
-                    <a href="/register">Regístrate</a>
+                    <router-link to="/register">Regístrate</router-link>
                 </p>
             </form>
         </section>
@@ -48,8 +47,8 @@
 </template>
 
 <script>
-// import api from '@/services/api'  // cuando tengas backend
 import { login } from '@/services/auth'
+import { errorMessage } from '@/services/utils'
 
 export default {
     name: 'loginView',
@@ -78,12 +77,11 @@ export default {
             this.loading = true
 
             try {
-                // Login simulado (src/services/auth.js).
-                // Con backend: const { data } = await api.post('/auth/login', {...})
+                // POST /api/auth/login → guarda el token Sanctum y el usuario
                 await login(this.username.trim(), this.password)
                 this.$router.push('/pedidos')
             } catch (e) {
-                this.error = 'Usuario o contraseña incorrectos. Revisa tus datos e inténtalo de nuevo.'
+                this.error = errorMessage(e, 'No se pudo iniciar sesión. Inténtalo de nuevo.')
             } finally {
                 this.loading = false
             }

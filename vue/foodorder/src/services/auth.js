@@ -1,31 +1,62 @@
-const USERS = [
-    { username: 'admin', password: 'admin123', name: 'Administrador', role: 'Administrador' },
-    { username: 'mesero', password: 'mesero123', name: 'Mesero Sala', role: 'Mesero' }
-]
+import api from './api'
+import { getToken, getUser, setSession, clearSession } from './session'
 
-const KEY = 'foodorder_user'
+export { getUser }
 
-export function login(username, password) {
-    const found = USERS.find((u) => u.username === username && u.password === password)
-    if (!found) throw new Error('Credenciales inválidas')
+/**
+ * Inicia sesión contra Laravel (POST /api/auth/login).
+ * Guarda el token Sanctum y un resumen del usuario con la forma que usan las vistas:
+ * { id, username, name, correo, rol_id, role }
+ */
+export async function login(username, clave) {
+    const { data } = await api.post('/auth/login', { username, clave })
 
-    const { password: _omit, ...user } = found // no guardamos la clave
-    localStorage.setItem(KEY, JSON.stringify(user))
+    const u = data.usuario
+    const user = {
+        id: u.id,
+        username: u.username,
+        name: u.username,
+        correo: u.correo,
+        rol_id: u.rol_id,
+        role: u.rol ? u.rol.nombre : 'Sin rol'
+    }
+
+    setSession(data.token, user)
     return user
 }
 
-export function logout() {
-    localStorage.removeItem(KEY)
+/**
+ * Registro público (POST /api/auth/register). La cuenta queda inactiva hasta
+ * que un administrador la active desde Gestión de Personal.
+ */
+export async function register({ username, correo, clave, clave_confirmation }) {
+    const { data } = await api.post('/auth/register', { username, correo, clave, clave_confirmation })
+    return data
 }
 
-export function getUser() {
-    try {
-        return JSON.parse(localStorage.getItem(KEY))
-    } catch {
-        return null
+/**
+ * Cierra la sesión. Es síncrona a propósito (las vistas hacen logout() y luego router.push):
+ * limpia el estado local al instante y revoca el token en el servidor en segundo plano.
+ */
+export function logout() {
+    const token = getToken()
+    clearSession()
+
+    if (token) {
+        api.post('/auth/logout', null, { headers: { Authorization: `Bearer ${token}` } }).catch(() => { })
     }
 }
 
 export function isAuthenticated() {
-    return Boolean(getUser())
+    return Boolean(getToken() && getUser())
+}
+
+export function hasRole(...roles) {
+    const user = getUser()
+    if (!user || !user.role) return false
+    return roles.map((r) => r.toLowerCase()).includes(user.role.toLowerCase())
+}
+
+export function isAdmin() {
+    return hasRole('Administrador')
 }

@@ -281,6 +281,7 @@
 <script>
 import api from '@/services/api'
 import { getUser, logout as endSession } from '@/services/auth'
+import { errorMessage } from '@/services/utils'
 
 export default {
     name: 'GestionPersonalView',
@@ -432,7 +433,8 @@ export default {
                     this.rolesList = response.data
                 }
             } catch (e) {
-                // Si no existe la ruta /roles, conserva los roles predeterminados
+                // Si falla, se conservan los roles predeterminados del formulario
+                console.warn('No se pudieron cargar los roles:', e)
             }
         },
 
@@ -443,7 +445,7 @@ export default {
                 this.staff = Array.isArray(response.data) ? response.data : []
             } catch (error) {
                 console.error('Error al cargar personal:', error)
-                alert('No se pudo conectar con la base de datos para cargar los usuarios.')
+                alert(errorMessage(error, 'No se pudieron cargar los usuarios.'))
             } finally {
                 this.loading = false
             }
@@ -539,7 +541,7 @@ export default {
                     const msg = Object.values(validationErrors).flat().join('\n')
                     alert(`Errores de validación:\n${msg}`)
                 } else {
-                    alert(error.response?.data?.message || 'Error al guardar el registro en el servidor.')
+                    alert(errorMessage(error, 'Error al guardar el registro en el servidor.'))
                 }
             } finally {
                 this.submitting = false
@@ -556,7 +558,7 @@ export default {
             } catch (error) {
                 console.error('Error al actualizar estado:', error)
                 member.estado = estadoAnterior
-                alert('No se pudo actualizar el estado.')
+                alert(errorMessage(error, 'No se pudo actualizar el estado.'))
             }
         },
 
@@ -567,7 +569,7 @@ export default {
                     this.staff = this.staff.filter((s) => s.id !== member.id)
                 } catch (error) {
                     console.error('Error al eliminar empleado:', error)
-                    alert('No se pudo eliminar el empleado.')
+                    alert(errorMessage(error, 'No se pudo eliminar el empleado.'))
                 }
             }
         },

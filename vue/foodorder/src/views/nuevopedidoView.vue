@@ -9,40 +9,40 @@
                 </div>
 
                 <nav class="sidebar__nav" aria-label="Menú principal">
-                    <a href="/pedidos" class="sidebar__link">
+                    <router-link to="/pedidos" class="sidebar__link">
                         <span class="sidebar__icon">▤</span>
                         Pedidos
-                    </a>
+                    </router-link>
 
-                    <a href="/pedidos/nuevo" class="sidebar__link sidebar__link--active" aria-current="page">
+                    <router-link to="/nuevopedido" class="sidebar__link sidebar__link--active" aria-current="page">
                         <span class="sidebar__icon">＋</span>
                         Nuevo pedido
-                    </a>
+                    </router-link>
 
-                    <a href="/cocina" class="sidebar__link">
+                    <router-link to="/cocina" class="sidebar__link">
                         <span class="sidebar__icon">♨</span>
                         Cocina
-                    </a>
+                    </router-link>
 
-                    <a href="/productos" class="sidebar__link">
+                    <router-link to="/productos" class="sidebar__link">
                         <span class="sidebar__icon">▦</span>
                         Productos
-                    </a>
+                    </router-link>
 
-                    <a href="/inventario" class="sidebar__link">
+                    <router-link to="/inventario" class="sidebar__link">
                         <span class="sidebar__icon">▣</span>
                         Inventario
-                    </a>
+                    </router-link>
                 </nav>
             </div>
 
             <div class="sidebar__footer">
                 <div class="sidebar__user">
-                    <div class="sidebar__avatar">MS</div>
+                    <div class="sidebar__avatar">{{ iniciales }}</div>
 
                     <div class="sidebar__user-info">
-                        <strong>Mesero</strong>
-                        <span>Personal del restaurante</span>
+                        <strong>{{ user.name }}</strong>
+                        <span>{{ user.role || 'Personal del restaurante' }}</span>
                     </div>
                 </div>
 
@@ -67,11 +67,11 @@
                 </div>
 
                 <div class="topbar__profile">
-                    <div class="topbar__profile-avatar">MS</div>
+                    <div class="topbar__profile-avatar">{{ iniciales }}</div>
 
                     <div class="topbar__profile-info">
-                        <strong>Mesero</strong>
-                        <span>Empleado</span>
+                        <strong>{{ user.name }}</strong>
+                        <span>{{ user.role || 'Empleado' }}</span>
                     </div>
                 </div>
             </header>
@@ -152,9 +152,11 @@
 
                                 <option value="">Seleccionar mesa</option>
 
-                                <option v-for="mesa in mesas" :key="mesa" :value="mesa">
-                                    Mesa {{ mesa }}
+                                <option v-for="mesa in mesasDisponibles" :key="mesa.id" :value="mesa.id">
+                                    Mesa {{ mesa.numero_mesa }} · {{ mesa.capacidad }} personas{{ mesa.estado === 'reservada' ? ' (reservada)' : '' }}
                                 </option>
+
+                                <option value="llevar">Para llevar (sin mesa)</option>
                             </select>
                         </div>
                     </div>
@@ -199,7 +201,13 @@
                         </div>
 
                         <!-- Lista de productos -->
-                        <div v-if="productosFiltrados.length" class="product-grid">
+                        <div v-if="cargando" class="empty-state">
+                            <span class="empty-state__icon">⌛</span>
+
+                            <h4>Cargando menú…</h4>
+                        </div>
+
+                        <div v-else-if="productosFiltrados.length" class="product-grid">
 
                             <article v-for="producto in productosFiltrados" :key="producto.id" class="product-card">
 
@@ -347,7 +355,7 @@
                             <button type="button" class="button button--primary" :disabled="!puedeConfirmar"
                                 @click="confirmarPedido">
 
-                                Confirmar pedido
+                                {{ enviando ? 'Enviando…' : 'Confirmar pedido' }}
                                 <span>→</span>
                             </button>
 
@@ -365,15 +373,86 @@
                 </div>
             </div>
         </section>
+
+        <!-- Modal: nuevo cliente -->
+        <div v-if="mostrarModalCliente" class="modal-backdrop" @click.self="mostrarModalCliente = false">
+            <form class="modal" @submit.prevent="guardarCliente">
+                <header class="modal__header">
+                    <h3>Nuevo cliente</h3>
+                    <button type="button" class="modal__close" aria-label="Cerrar" @click="mostrarModalCliente = false">
+                        ×
+                    </button>
+                </header>
+
+                <div class="modal__body">
+                    <p v-if="errorCliente" class="modal__error" role="alert">{{ errorCliente }}</p>
+
+                    <div class="field">
+                        <label for="cli-nombre">Nombre</label>
+                        <input id="cli-nombre" v-model="nuevoCliente.nombre" class="field__control" type="text" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="cli-apellido">Apellido</label>
+                        <input id="cli-apellido" v-model="nuevoCliente.apellido" class="field__control" type="text" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="cli-correo">Correo (opcional)</label>
+                        <input id="cli-correo" v-model="nuevoCliente.correo" class="field__control" type="email">
+                    </div>
+
+                    <div class="field">
+                        <label for="cli-tel">Teléfono (opcional)</label>
+                        <input id="cli-tel" v-model="nuevoCliente.telefono" class="field__control" type="tel">
+                    </div>
+                </div>
+
+                <footer class="modal__actions">
+                    <button type="button" class="button button--outline" @click="mostrarModalCliente = false">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="button button--primary" :disabled="guardandoCliente">
+                        {{ guardandoCliente ? 'Guardando…' : 'Guardar cliente' }}
+                    </button>
+                </footer>
+            </form>
+        </div>
     </main>
 </template>
 
 <script>
+import api from '@/services/api'
+import { getUser, logout as endSession } from '@/services/auth'
+import { errorMessage, fullName } from '@/services/utils'
+
+// La base de datos no guarda emoji ni color: se deducen del nombre/categoría del producto.
+const ICONOS = [
+    [/ensalada/, '🥗'], [/papa/, '🍟'], [/hamburguesa/, '🍔'], [/pizza/, '🍕'], [/pollo/, '🍗'],
+    [/limon/, '🍋'], [/naranja/, '🍊'], [/pastel|torta|helado|flan/, '🍰'], [/cerveza/, '🍺'],
+    [/cafe/, '☕'], [/agua/, '💧'], [/taco/, '🌮'], [/pasta|espagueti/, '🍝'], [/sopa/, '🍲'],
+    [/pescado|marisco|camaron/, '🐟'], [/carne|bistec|steak/, '🥩'], [/sandwich/, '🥪'],
+    [/jugo|bebida|refresco|soda|gaseosa/, '🥤'], [/postre/, '🍰'], [/entrada/, '🥗']
+]
+const COLORES = ['green', 'gold', 'orange', 'red']
+
+function normalizar(texto) {
+    return String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+}
+
+function iconoPara(nombre, categoria) {
+    const texto = normalizar(`${nombre} ${categoria}`)
+    const hallado = ICONOS.find(([regex]) => regex.test(texto))
+    return hallado ? hallado[1] : '🍽️'
+}
+
 export default {
     name: 'NuevoPedido',
 
     data() {
         return {
+            user: getUser() || { name: 'Usuario', role: '' },
+
             categoriaActiva: 'Todas',
             busqueda: '',
 
@@ -383,108 +462,42 @@ export default {
             mensaje: '',
             mensajeTipo: 'success',
 
-            clientes: [
-                { id: 1, nombre: 'Cliente general' },
-                { id: 2, nombre: 'Carlos Martínez' },
-                { id: 3, nombre: 'María Hernández' },
-                { id: 4, nombre: 'José Ramírez' }
-            ],
+            cargando: true,
+            enviando: false,
 
-            mesas: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-
-            categorias: [
-                'Todas',
-                'Entradas',
-                'Platos',
-                'Bebidas',
-                'Postres'
-            ],
-
-            productos: [
-                {
-                    id: 1,
-                    nombre: 'Ensalada fresca',
-                    descripcion: 'Vegetales frescos de temporada.',
-                    precio: 5.50,
-                    categoria: 'Entradas',
-                    icono: '🥗',
-                    color: 'green'
-                },
-                {
-                    id: 2,
-                    nombre: 'Papas fritas',
-                    descripcion: 'Papas doradas y crujientes.',
-                    precio: 3.00,
-                    categoria: 'Entradas',
-                    icono: '🍟',
-                    color: 'gold'
-                },
-                {
-                    id: 3,
-                    nombre: 'Hamburguesa clásica',
-                    descripcion: 'Carne, vegetales y queso.',
-                    precio: 8.50,
-                    categoria: 'Platos',
-                    icono: '🍔',
-                    color: 'orange'
-                },
-                {
-                    id: 4,
-                    nombre: 'Pizza especial',
-                    descripcion: 'Queso, salsa y vegetales.',
-                    precio: 12.00,
-                    categoria: 'Platos',
-                    icono: '🍕',
-                    color: 'red'
-                },
-                {
-                    id: 5,
-                    nombre: 'Pollo a la plancha',
-                    descripcion: 'Pollo acompañado de vegetales.',
-                    precio: 9.75,
-                    categoria: 'Platos',
-                    icono: '🍗',
-                    color: 'green'
-                },
-                {
-                    id: 6,
-                    nombre: 'Limonada',
-                    descripcion: 'Bebida natural refrescante.',
-                    precio: 2.00,
-                    categoria: 'Bebidas',
-                    icono: '🍋',
-                    color: 'gold'
-                },
-                {
-                    id: 7,
-                    nombre: 'Jugo de naranja',
-                    descripcion: 'Jugo de naranja natural.',
-                    precio: 2.50,
-                    categoria: 'Bebidas',
-                    icono: '🍊',
-                    color: 'orange'
-                },
-                {
-                    id: 8,
-                    nombre: 'Pastel de chocolate',
-                    descripcion: 'Pastel con cobertura de chocolate.',
-                    precio: 4.00,
-                    categoria: 'Postres',
-                    icono: '🍰',
-                    color: 'red'
-                }
-            ],
+            // Datos que llegan de la API
+            clientes: [],
+            mesas: [],
+            categorias: ['Todas'],
+            productos: [],
 
             pedido: [],
 
-            // Tasa de impuesto de ejemplo: 13 %.
-            // Ajusta este valor según la normativa y configuración
-            // fiscal aplicable a tu restaurante.
-            tasaImpuesto: 0.13
+            // Se sobrescribe con GET /configuracion (TASA_IMPUESTO del .env de Laravel)
+            tasaImpuesto: 0.13,
+
+            // Modal de nuevo cliente
+            mostrarModalCliente: false,
+            guardandoCliente: false,
+            errorCliente: '',
+            nuevoCliente: { nombre: '', apellido: '', correo: '', telefono: '' }
         }
     },
 
     computed: {
+        iniciales() {
+            return (this.user.name || 'US')
+                .split(' ')
+                .map((w) => w[0])
+                .join('')
+                .slice(0, 2)
+                .toUpperCase()
+        },
+
+        mesasDisponibles() {
+            return this.mesas.filter((m) => m.estado !== 'ocupada')
+        },
+
         productosFiltrados() {
             const termino = this.busqueda.trim().toLowerCase()
 
@@ -531,12 +544,67 @@ export default {
             return (
                 this.pedido.length > 0 &&
                 this.clienteSeleccionado !== '' &&
-                this.mesaSeleccionada !== ''
+                this.mesaSeleccionada !== '' &&
+                !this.enviando
             )
         }
     },
 
+    created() {
+        this.cargarDatos()
+    },
+
     methods: {
+        async cargarDatos() {
+            this.cargando = true
+            try {
+                const [productos, categorias, mesas, clientes, config] = await Promise.all([
+                    api.get('/productos'),
+                    api.get('/categorias'),
+                    api.get('/mesas'),
+                    api.get('/clientes'),
+                    api.get('/configuracion').catch(() => null)
+                ])
+
+                const nombresCategoria = categorias.data.map((c) => c.nombre)
+                this.categorias = ['Todas', ...nombresCategoria]
+
+                this.productos = productos.data
+                    .filter((p) => p.disponible)
+                    .map((p) => {
+                        const categoria = p.categoria ? p.categoria.nombre : 'Otros'
+                        const indice = Math.max(0, nombresCategoria.indexOf(categoria))
+                        return {
+                            id: p.id,
+                            nombre: p.nombre,
+                            descripcion: p.descripcion || '',
+                            precio: Number(p.precio),
+                            categoria,
+                            icono: iconoPara(p.nombre, categoria),
+                            color: COLORES[indice % COLORES.length]
+                        }
+                    })
+
+                this.mesas = mesas.data
+                this.clientes = clientes.data.map((c) => ({ id: c.id, nombre: fullName(c) }))
+
+                if (config && config.data && config.data.tasa_impuesto !== undefined) {
+                    this.tasaImpuesto = Number(config.data.tasa_impuesto)
+                }
+
+                // Viene de pulsar una mesa libre en la pantalla de Pedidos: /nuevopedido?mesa=3
+                const mesaId = Number(this.$route.query.mesa)
+                if (mesaId && this.mesasDisponibles.some((m) => m.id === mesaId)) {
+                    this.mesaSeleccionada = mesaId
+                }
+            } catch (e) {
+                this.mensaje = errorMessage(e, 'No se pudo cargar el menú.')
+                this.mensajeTipo = 'error'
+            } finally {
+                this.cargando = false
+            }
+        },
+
         agregarAlPedido(producto) {
             const existente = this.pedido.find(
                 item => item.id === producto.id
@@ -579,26 +647,37 @@ export default {
         },
 
         agregarCliente() {
-            const nombre = window.prompt(
-                'Ingresa el nombre del nuevo cliente:'
-            )
+            this.nuevoCliente = { nombre: '', apellido: '', correo: '', telefono: '' }
+            this.errorCliente = ''
+            this.mostrarModalCliente = true
+        },
 
-            if (nombre === null || !nombre.trim()) {
-                return
+        async guardarCliente() {
+            this.guardandoCliente = true
+            this.errorCliente = ''
+
+            try {
+                const payload = {
+                    nombre: this.nuevoCliente.nombre.trim(),
+                    apellido: this.nuevoCliente.apellido.trim(),
+                    correo: this.nuevoCliente.correo.trim() || null,
+                    telefono: this.nuevoCliente.telefono.trim() || null
+                }
+
+                const { data } = await api.post('/clientes', payload)
+                const creado = data.data || data
+
+                this.clientes.push({ id: creado.id, nombre: fullName(creado) })
+                this.clienteSeleccionado = creado.id
+                this.mostrarModalCliente = false
+
+                this.mensaje = 'Cliente agregado correctamente.'
+                this.mensajeTipo = 'success'
+            } catch (e) {
+                this.errorCliente = errorMessage(e, 'No se pudo guardar el cliente.')
+            } finally {
+                this.guardandoCliente = false
             }
-
-            const nuevoCliente = {
-                id: this.clientes.length
-                    ? Math.max(...this.clientes.map(c => c.id)) + 1
-                    : 1,
-                nombre: nombre.trim()
-            }
-
-            this.clientes.push(nuevoCliente)
-            this.clienteSeleccionado = nuevoCliente.id
-
-            this.mensaje = 'Cliente agregado correctamente.'
-            this.mensajeTipo = 'success'
         },
 
         limpiarFiltros() {
@@ -606,7 +685,7 @@ export default {
             this.busqueda = ''
         },
 
-        confirmarPedido() {
+        async confirmarPedido() {
             if (!this.puedeConfirmar) {
                 this.mensaje =
                     'Selecciona un cliente, una mesa y al menos un producto.'
@@ -619,29 +698,44 @@ export default {
                 c => c.id === Number(this.clienteSeleccionado)
             )
 
-            const pedidoConfirmado = {
-                cliente: cliente ? cliente.nombre : '',
-                mesa: this.mesaSeleccionada,
-                productos: this.pedido.map(item => ({ ...item })),
-                subtotal: this.subtotalPedido,
-                impuestos: this.impuestos,
-                total: this.totalPedido,
-                fecha: new Date().toISOString()
+            const payload = {
+                cliente_id: Number(this.clienteSeleccionado),
+                mesa_id: this.mesaSeleccionada === 'llevar' ? null : Number(this.mesaSeleccionada),
+                estado: 'pendiente',
+                detalles: this.pedido.map(item => ({
+                    producto_id: item.id,
+                    cantidad: item.cantidad
+                }))
             }
 
-            // Evento para que el componente padre pueda recibir el pedido.
-            // No guarda información permanentemente en una base de datos.
-            this.$emit('pedido-confirmado', pedidoConfirmado)
+            this.enviando = true
 
-            this.mensaje =
-                `Pedido preparado para ${cliente.nombre}, mesa ${this.mesaSeleccionada}. Total: $${this.totalPedido.toFixed(2)}.`
+            try {
+                // POST /api/pedidos: el servidor toma los precios de la BD, calcula el
+                // impuesto, guarda el pedido con sus detalles y marca la mesa como ocupada.
+                const { data } = await api.post('/pedidos', payload)
+                const creado = data.data || data
 
-            this.mensajeTipo = 'success'
+                this.$emit('pedido-confirmado', creado)
 
-            // Se limpia el formulario después de confirmar.
-            this.pedido = []
-            this.clienteSeleccionado = ''
-            this.mesaSeleccionada = ''
+                const donde = payload.mesa_id ? `mesa ${creado.mesa ? creado.mesa.numero_mesa : ''}` : 'para llevar'
+                this.mensaje =
+                    `Pedido #${creado.id} registrado para ${cliente ? cliente.nombre : 'el cliente'} (${donde}). Total: $${Number(creado.precio_total).toFixed(2)}.`
+                this.mensajeTipo = 'success'
+
+                // Se limpia el formulario y se refrescan las mesas (la usada ya está ocupada)
+                this.pedido = []
+                this.clienteSeleccionado = ''
+                this.mesaSeleccionada = ''
+
+                const mesas = await api.get('/mesas')
+                this.mesas = mesas.data
+            } catch (e) {
+                this.mensaje = errorMessage(e, 'No se pudo registrar el pedido.')
+                this.mensajeTipo = 'error'
+            } finally {
+                this.enviando = false
+            }
         },
 
         cancelarPedido() {
@@ -664,7 +758,8 @@ export default {
             )
 
             if (confirmar) {
-                this.$router.push('/login')
+                endSession()
+                this.$router.push('/')
             }
         }
     }
@@ -1851,5 +1946,73 @@ export default {
     .orders .summary__grand-total strong {
         font-size: 21px;
     }
+}
+
+/* ---------- Modal: nuevo cliente ---------- */
+.orders .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: rgba(17, 49, 43, .45);
+}
+
+.orders .modal {
+    width: 100%;
+    max-width: 440px;
+    max-height: 92vh;
+    overflow-y: auto;
+    background: var(--white);
+    border-radius: 14px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, .15);
+}
+
+.orders .modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--line);
+}
+
+.orders .modal__header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--pine);
+}
+
+.orders .modal__close {
+    padding: 0 4px;
+    font-size: 24px;
+    line-height: 1;
+    color: var(--muted);
+    background: none;
+    border: none;
+}
+
+.orders .modal__body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px;
+}
+
+.orders .modal__error {
+    margin: 0;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--error);
+    background: var(--error-bg);
+    border-radius: 8px;
+}
+
+.orders .modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 0 20px 20px;
 }
 </style>
