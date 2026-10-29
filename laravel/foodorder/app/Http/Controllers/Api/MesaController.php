@@ -4,13 +4,15 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Mesa;
+use App\Models\Pedido;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class MesaController extends Controller
 {
     public function index()
     {
-        return response()->json(Mesa::with('pedidos')->get(), 200);
+        return response()->json(Mesa::orderBy('numero_mesa')->get(), 200);
     }
 
     public function store(Request $request)
@@ -18,8 +20,10 @@ class MesaController extends Controller
         $validated = $request->validate([
             'numero_mesa' => 'required|integer|unique:mesas,numero_mesa',
             'capacidad' => 'required|integer|min:1',
-            'estado' => 'string'
+            'estado' => ['nullable', Rule::in(Mesa::ESTADOS)]
         ]);
+
+        $validated['estado'] = $validated['estado'] ?? 'disponible';
 
         $mesa = Mesa::create($validated);
         return response()->json(['message' => 'Mesa creada con éxito', 'data' => $mesa], 201);
@@ -35,7 +39,7 @@ class MesaController extends Controller
         $validated = $request->validate([
             'numero_mesa' => 'sometimes|integer|unique:mesas,numero_mesa,' . $mesa->id,
             'capacidad' => 'sometimes|integer|min:1',
-            'estado' => 'string'
+            'estado' => ['sometimes', Rule::in(Mesa::ESTADOS)]
         ]);
 
         $mesa->update($validated);
@@ -44,6 +48,14 @@ class MesaController extends Controller
 
     public function destroy(Mesa $mesa)
     {
+        $activos = $mesa->pedidos()->whereNotIn('estado', Pedido::ESTADOS_FINALES)->exists();
+
+        if ($activos) {
+            return response()->json([
+                'message' => 'La mesa tiene pedidos activos y no se puede eliminar.'
+            ], 409);
+        }
+
         $mesa->delete();
         return response()->json(['message' => 'Mesa eliminada con éxito'], 200);
     }

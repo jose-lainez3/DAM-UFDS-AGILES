@@ -11,7 +11,7 @@ class CategoriaController extends Controller
     // Listar todas las categorías
     public function index()
     {
-        return response()->json(Categoria::all(), 200);
+        return response()->json(Categoria::withCount('productos')->orderBy('nombre')->get(), 200);
     }
 
     // Crear una nueva categoría
@@ -55,6 +55,13 @@ class CategoriaController extends Controller
     // Eliminar una categoría
     public function destroy(Categoria $categoria)
     {
+        // La FK de productos es "cascade": borrar la categoría borraría sus productos
+        if ($categoria->productos()->exists()) {
+            return response()->json([
+                'message' => 'La categoría tiene productos asociados. Muévelos o elimínalos primero.'
+            ], 409);
+        }
+
         $categoria->delete();
 
         return response()->json([

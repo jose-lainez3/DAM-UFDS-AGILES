@@ -9,6 +9,12 @@ class Pedido extends Model
 {
     use HasFactory;
 
+    // Flujo: pendiente -> preparacion -> entregado -> pagado  (o cancelado)
+    public const ESTADOS = ['pendiente', 'preparacion', 'entregado', 'pagado', 'cancelado'];
+
+    // Estados en los que el pedido ya no ocupa la mesa
+    public const ESTADOS_FINALES = ['pagado', 'cancelado'];
+
     protected $table = 'pedidos';
 
     protected $fillable = [
@@ -18,6 +24,12 @@ class Pedido extends Model
         'fecha_pedido',
         'precio_total',
         'estado'
+    ];
+
+    protected $casts = [
+        'precio_total' => 'float',
+        // Con el cast, Laravel lo serializa en ISO-8601 (con zona horaria)
+        'fecha_pedido' => 'datetime',
     ];
 
     // Relación: Un pedido pertenece a un cliente
@@ -42,5 +54,24 @@ class Pedido extends Model
     public function detalles()
     {
         return $this->hasMany(DetallePedido::class, 'pedido_id');
+    }
+
+    /**
+     * Marca la mesa como disponible si ya no quedan pedidos activos en ella.
+     */
+    public function liberarMesaSiCorresponde(): void
+    {
+        if (!$this->mesa_id) {
+            return;
+        }
+
+        $hayActivos = static::where('mesa_id', $this->mesa_id)
+            ->where('id', '!=', $this->id)
+            ->whereNotIn('estado', self::ESTADOS_FINALES)
+            ->exists();
+
+        if (!$hayActivos) {
+            Mesa::where('id', $this->mesa_id)->update(['estado' => 'disponible']);
+        }
     }
 }

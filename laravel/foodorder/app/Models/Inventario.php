@@ -17,6 +17,10 @@ class Inventario extends Model
         'unidad_medida'
     ];
 
+    protected $casts = [
+        'cantidad_stock' => 'integer',
+    ];
+
     // Relación: Un inventario pertenece a un producto
     public function producto()
     {

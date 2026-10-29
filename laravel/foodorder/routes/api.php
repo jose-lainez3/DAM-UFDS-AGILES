@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\RolController;
 use App\Http\Controllers\Api\UsuarioController;
 use App\Http\Controllers\Api\ClienteController;
@@ -12,13 +12,50 @@ use App\Http\Controllers\Api\PedidoController;
 use App\Http\Controllers\Api\DetallePedidoController;
 use App\Http\Controllers\Api\InventarioController;
 
-// Rutas de la API para FoodOrder
-Route::apiResource('roles', RolController::class);
-Route::apiResource('usuarios', UsuarioController::class);
-Route::apiResource('clientes', ClienteController::class);
-Route::apiResource('mesas', MesaController::class);
-Route::apiResource('categorias', CategoriaController::class);
-Route::apiResource('productos', ProductoController::class);
-Route::apiResource('pedidos', PedidoController::class);
-Route::apiResource('detalle-pedidos', DetallePedidoController::class);
-Route::apiResource('inventarios', InventarioController::class);
+/*
+|--------------------------------------------------------------------------
+| API de FoodOrder  (prefijo /api)
+|--------------------------------------------------------------------------
+*/
+
+// ---------- Autenticación (pública) ----------
+Route::prefix('auth')->group(function () {
+    Route::post('login', [AuthController::class, 'login']);
+    Route::post('register', [AuthController::class, 'register']);
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('logout', [AuthController::class, 'logout']);
+        Route::get('me', [AuthController::class, 'me']);
+    });
+});
+
+// ---------- Rutas protegidas con token (Sanctum) ----------
+Route::middleware('auth:sanctum')->group(function () {
+
+    // Ajustes del local que necesita el front (p. ej. el impuesto)
+    Route::get('configuracion', fn () => response()->json([
+        'tasa_impuesto' => config('foodorder.tasa_impuesto'),
+    ]));
+
+    // Roles: cualquiera autenticado puede listarlos; solo el administrador los modifica
+    Route::apiResource('roles', RolController::class)
+        ->parameters(['roles' => 'rol'])
+        ->only(['index', 'show']);
+
+    // Solo administradores
+    Route::middleware('role:Administrador')->group(function () {
+        Route::apiResource('roles', RolController::class)
+            ->parameters(['roles' => 'rol'])
+            ->except(['index', 'show']);
+
+        Route::apiResource('usuarios', UsuarioController::class);
+    });
+
+    Route::apiResource('clientes', ClienteController::class);
+    Route::apiResource('mesas', MesaController::class);
+    Route::apiResource('categorias', CategoriaController::class);
+    Route::apiResource('productos', ProductoController::class);
+    Route::apiResource('pedidos', PedidoController::class);
+    Route::apiResource('detalle-pedidos', DetallePedidoController::class);
+    Route::apiResource('inventarios', InventarioController::class);
+});

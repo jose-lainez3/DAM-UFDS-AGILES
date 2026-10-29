@@ -18,6 +18,12 @@ class DetallePedido extends Model
         'subtotal'
     ];
 
+    protected $casts = [
+        'cantidad' => 'integer',
+        'precio_unitario' => 'float',
+        'subtotal' => 'float',
+    ];
+
     // Relación: Un detalle pertenece a un pedido
     public function pedido()
     {

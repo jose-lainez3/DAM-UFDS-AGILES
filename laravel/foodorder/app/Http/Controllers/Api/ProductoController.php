@@ -49,6 +49,13 @@ class ProductoController extends Controller
 
     public function destroy(Producto $producto)
     {
+        // La FK de detalle_pedidos es "cascade": borrarlo eliminaría líneas de pedidos antiguos
+        if ($producto->detalles()->exists()) {
+            return response()->json([
+                'message' => 'Este producto ya forma parte de pedidos y no se puede eliminar. Márcalo como no disponible.'
+            ], 409);
+        }
+
         $producto->delete();
         return response()->json(['message' => 'Producto eliminado con éxito'], 200);
     }

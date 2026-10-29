@@ -10,7 +10,7 @@ class ClienteController extends Controller
 {
     public function index()
     {
-        return response()->json(Cliente::with('pedidos')->get(), 200);
+        return response()->json(Cliente::withCount('pedidos')->orderBy('nombre')->get(), 200);
     }
 
     public function store(Request $request)

@@ -18,7 +18,7 @@ public function up(): void
         $table->foreignId('usuario_id')->constrained('usuarios')->onDelete('cascade'); // El mesero que atendió
         $table->timestamp('fecha_pedido')->useCurrent();
         $table->decimal('precio_total', 10, 2)->default(0.00);
-        $table->string('estado')->default('pendiente'); // pendiente, en preparacion, entregado, pagado, cancelado
+        $table->string('estado')->default('pendiente'); // pendiente, preparacion, entregado, pagado, cancelado
         $table->timestamps();
     });
 }
