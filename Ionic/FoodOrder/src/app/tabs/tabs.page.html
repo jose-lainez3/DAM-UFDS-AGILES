@@ -1,23 +1,32 @@
+
 <ion-tabs>
-  <ion-tab-bar slot="bottom">
+
+  <ion-tab-bar slot="bottom" class="foodorder-tabs">
+
+    <!-- MENÚ -->
+    <ion-tab-button tab="menu" href="/tabs/menu">
+      <ion-icon name="restaurant-outline"></ion-icon>
+      <ion-label>Menú</ion-label>
+    </ion-tab-button>
+
+    <!-- CARRITO -->
+    <ion-tab-button tab="carrito" href="/tabs/carrito">
+      <ion-icon name="cart-outline"></ion-icon>
+      <ion-label>Carrito</ion-label>
+    </ion-tab-button>
+
+    <!-- MIS PEDIDOS -->
     <ion-tab-button tab="pedidos" href="/tabs/pedidos">
-      <ion-icon aria-hidden="true" name="receipt-outline"></ion-icon>
-      <ion-label>Pedidos</ion-label>
+      <ion-icon name="receipt-outline"></ion-icon>
+      <ion-label>Mis pedidos</ion-label>
     </ion-tab-button>
 
-    <ion-tab-button tab="nuevo" href="/tabs/nuevo">
-      <ion-icon aria-hidden="true" name="add-circle-outline"></ion-icon>
-      <ion-label>Nuevo</ion-label>
-    </ion-tab-button>
-
-    <ion-tab-button tab="cocina" href="/tabs/cocina">
-      <ion-icon aria-hidden="true" name="flame-outline"></ion-icon>
-      <ion-label>Cocina</ion-label>
-    </ion-tab-button>
-
+    <!-- PERFIL -->
     <ion-tab-button tab="perfil" href="/tabs/perfil">
-      <ion-icon aria-hidden="true" name="person-circle-outline"></ion-icon>
+      <ion-icon name="person-circle-outline"></ion-icon>
       <ion-label>Perfil</ion-label>
     </ion-tab-button>
+
   </ion-tab-bar>
+
 </ion-tabs>

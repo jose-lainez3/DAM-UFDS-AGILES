@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   IonButton, IonContent, IonInput, IonInputPasswordToggle, IonItem, IonList, IonNote, IonSpinner, IonText,
 } from '@ionic/angular';
@@ -10,21 +10,29 @@ import { errorMessage } from '../../core/errors';
 @Component({
   selector: 'app-login',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, IonContent, IonList, IonItem, IonInput, IonInputPasswordToggle, IonButton, IonText, IonNote, IonSpinner],
+  imports: [FormsModule, RouterLink, IonContent, IonList, IonItem, IonInput, IonInputPasswordToggle, IonButton, IonText, IonNote, IonSpinner],
   template: `
     <ion-content class="ion-padding" [fullscreen]="true">
       <div class="login">
         <div class="login__brand">
-          <div class="login__logo">🍽️</div>
-          <h1>FoodOrder</h1>
-          <ion-note>Sistema de gestión de pedidos</ion-note>
+          <div class="login-brand">
+  <img
+    src="assets/logo.png"
+    alt="Logo de FoodOrder"
+    class="login-logo"
+  />
+
+  <h1>FoodOrder</h1>
+  <p>Tu comida favorita, a un toque</p>
+</div>
+          
         </div>
 
         <form (ngSubmit)="entrar()">
           <ion-list lines="none" class="login__list">
             <ion-item>
               <ion-input
-                label="Usuario"
+                label="Usuario o correo"
                 labelPlacement="floating"
                 name="username"
                 autocomplete="username"
@@ -54,27 +62,58 @@ import { errorMessage } from '../../core/errors';
             @if (cargando()) { <ion-spinner name="dots" /> } @else { Iniciar sesión }
           </ion-button>
         </form>
+
+        <ion-button expand="block" fill="outline" routerLink="/registro" [queryParams]="{ returnUrl: returnUrl }">
+          Crear cuenta
+        </ion-button>
+        <ion-button expand="block" fill="clear" routerLink="/tabs/menu">Explorar el menú sin cuenta</ion-button>
       </div>
     </ion-content>
   `,
   styles: `
-    .login { max-width: 420px; margin: 0 auto; padding-top: 12vh; }
-    .login__brand { text-align: center; margin-bottom: 32px; }
-    .login__logo { font-size: 56px; }
-    .login__brand h1 { margin: 4px 0; font-weight: 800; }
-    .login__list { background: transparent; margin-bottom: 8px; }
-    .login__list ion-item { margin-bottom: 12px; --border-radius: 12px; }
-    .login__error { margin: 4px 0 16px; font-size: 14px; }
+    .login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 38px;
+  text-align: center;
+}
+
+.login-logo {
+  width: 115px;
+  height: 115px;
+  object-fit: contain;
+  display: block;
+}
+
+.login-brand h1 {
+  margin: 0;
+  color: #10372f;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.login-brand p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+}
   `,
 })
 export class LoginPage {
   private auth = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   username = '';
   clave = '';
   cargando = signal(false);
   error = signal('');
+
+  /** A dónde volver después de entrar (p. ej. al carrito si venía a confirmar un pedido). */
+  returnUrl = this.destino();
 
   async entrar() {
     if (!this.username.trim() || !this.clave || this.cargando()) return;
@@ -84,11 +123,17 @@ export class LoginPage {
     try {
       await this.auth.login(this.username.trim(), this.clave);
       this.clave = '';
-      await this.router.navigateByUrl('/tabs/pedidos', { replaceUrl: true });
+      await this.router.navigateByUrl(this.returnUrl, { replaceUrl: true });
     } catch (e) {
       this.error.set(errorMessage(e, 'No se pudo iniciar sesión.'));
     } finally {
       this.cargando.set(false);
     }
+  }
+
+  private destino(): string {
+    const url = this.route.snapshot.queryParamMap.get('returnUrl') ?? '';
+    // Solo rutas internas de la app
+    return url.startsWith('/tabs') ? url : '/tabs/menu';
   }
 }

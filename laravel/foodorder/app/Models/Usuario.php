@@ -41,8 +41,8 @@ class Usuario extends Authenticatable
     }
 
     // Relación: Un usuario (mesero/admin) atiende muchos pedidos
-    public function pedidos()
-    {
-        return $this->hasMany(Pedido::class, 'usuario_id');
-    }
+   public function cliente()
+{
+    return $this->hasOne(Cliente::class, 'usuario_id');
+}
 }

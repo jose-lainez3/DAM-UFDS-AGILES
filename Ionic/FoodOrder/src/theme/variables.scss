@@ -1,2 +1,185 @@
-// For information on how to create your own theme, please refer to:
-// https://ionicframework.com/docs/theming/
+
+/* ========================================
+   FOODORDER - ESTILOS GLOBALES
+   ======================================== */
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+ion-app {
+  background: #f7f8f6;
+  color: #10372f;
+  font-family: Inter, Arial, sans-serif;
+}
+
+/* Contenido */
+ion-content {
+  --background: #f7f8f6;
+  --color: #10372f;
+}
+
+/* Encabezados */
+ion-header {
+  box-shadow: none;
+}
+
+ion-toolbar {
+  --background: #ffffff;
+  --color: #10372f;
+  --border-color: #e5e9e6;
+  --min-height: 60px;
+}
+
+ion-title {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+
+/* Listas */
+ion-list {
+  background: transparent !important;
+  padding: 0;
+}
+
+ion-list[inset] {
+  margin: 14px 16px;
+  border: 1px solid #e5e9e6;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* Elementos */
+ion-item {
+  --background: #ffffff;
+  --color: #10372f;
+  --border-color: #e5e9e6;
+  --padding-start: 16px;
+  --inner-padding-end: 16px;
+  --min-height: 54px;
+}
+
+ion-label {
+  color: #10372f;
+}
+
+ion-note {
+  color: #64748b;
+}
+
+/* Botones */
+ion-button {
+  --border-radius: 10px;
+  --box-shadow: none;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Tarjetas */
+ion-card {
+  --background: #ffffff;
+  --color: #10372f;
+  border: 1px solid #e5e9e6;
+  border-radius: 16px;
+  box-shadow: none;
+  margin: 12px 16px;
+}
+
+/* Buscadores */
+ion-searchbar {
+  --background: #ffffff;
+  --color: #10372f;
+  --placeholder-color: #89958f;
+  --icon-color: #64748b;
+  --clear-button-color: #64748b;
+  --border-radius: 12px;
+  --box-shadow: none;
+  padding: 12px 16px;
+}
+
+/* Inputs */
+ion-input,
+ion-textarea,
+ion-select {
+  --color: #10372f;
+  --placeholder-color: #89958f;
+  --highlight-color-focused: #10372f;
+}
+
+/* Segmentos y filtros */
+ion-segment {
+  --background: #eef2ef;
+  border-radius: 12px;
+  padding: 4px;
+}
+
+ion-segment-button {
+  --color: #64748b;
+  --color-checked: #10372f;
+  --indicator-color: #ffffff;
+  --border-radius: 9px;
+  min-height: 40px;
+  text-transform: none;
+  font-weight: 600;
+}
+
+/* Estados */
+ion-badge {
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Navegación inferior */
+ion-tab-bar {
+  --background: #ffffff;
+  --border: 1px solid #e5e9e6;
+  height: 64px;
+}
+
+ion-tab-button {
+  --background: #ffffff;
+  --color: #64748b;
+  --color-selected: #10372f;
+  font-size: 12px;
+}
+
+ion-tab-button.tab-selected {
+  --color: #10372f;
+}
+
+/* Footer */
+ion-footer {
+  box-shadow: none;
+}
+
+ion-footer ion-toolbar {
+  --background: #ffffff;
+}
+
+/* Modales y alertas */
+ion-alert,
+ion-modal,
+ion-popover,
+ion-toast {
+  color-scheme: light;
+}
+
+/* Scroll */
+::-webkit-scrollbar {
+  width: 7px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5d0;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}

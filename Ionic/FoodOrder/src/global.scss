@@ -1,37 +1,764 @@
+
 /*
- * App Global CSS
- * ----------------------------------------------------------------------------
- * Put style rules here that you want to apply globally. These styles are for
- * the entire app and not just one component. Additionally, this file can be
- * used as an entry point to import other CSS/Sass files to be included in the
- * output CSS.
- * For more information on global stylesheets, visit the documentation:
- * https://ionicframework.com/docs/layout/global-stylesheets
+ * FOODORDER - ESTILOS GLOBALES
+ * Ionic Angular
+ *
+ * Paleta:
+ * Verde oscuro: #10372F
+ * Dorado:        #F5B332
+ * Fondo:         #F7F8F6
+ * Blanco:        #FFFFFF
+ * Gris:          #64748B
  */
 
-/* Core CSS required for Ionic components to work properly */
+/* ==========================================
+   1. IMPORTACIONES DE IONIC
+   ========================================== */
+
 @import "@ionic/angular/css/core.css";
 
-/* Basic CSS for apps built with Ionic */
 @import "@ionic/angular/css/normalize.css";
 @import "@ionic/angular/css/structure.css";
 @import "@ionic/angular/css/typography.css";
 @import "@ionic/angular/css/display.css";
 
-/* Optional CSS utils that can be commented out */
 @import "@ionic/angular/css/padding.css";
 @import "@ionic/angular/css/float-elements.css";
 @import "@ionic/angular/css/text-alignment.css";
 @import "@ionic/angular/css/text-transformation.css";
 @import "@ionic/angular/css/flex-utils.css";
 
-/**
- * Ionic Dark Mode
- * -----------------------------------------------------
- * For more info, please see:
- * https://ionicframework.com/docs/theming/dark-mode
+/*
+ * No importar dark.system.css.
+ * La aplicación utiliza una apariencia clara.
  */
 
-/* @import "@ionic/angular/css/palettes/dark.always.css"; */
-/* @import "@ionic/angular/css/palettes/dark.class.css"; */
-@import '@ionic/angular/css/palettes/dark.system.css';
+/* ==========================================
+   2. VARIABLES Y PALETA DE COLORES
+   ========================================== */
+
+:root {
+  color-scheme: light;
+
+  /* Identidad FoodOrder */
+  --food-primary: #10372f;
+  --food-primary-light: #1b4a42;
+  --food-primary-dark: #0b2923;
+
+  --food-gold: #f5b332;
+  --food-gold-hover: #e6a326;
+  --food-gold-soft: #fff4d9;
+
+  --food-bg: #f7f8f6;
+  --food-white: #ffffff;
+  --food-border: #e5e9e6;
+  --food-muted: #64748b;
+  --food-muted-light: #94a3b8;
+
+  /* Ionic primary */
+  --ion-color-primary: #10372f;
+  --ion-color-primary-rgb: 16, 55, 47;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #0e3029;
+  --ion-color-primary-tint: #285047;
+
+  /* Ionic secondary */
+  --ion-color-secondary: #f5b332;
+  --ion-color-secondary-rgb: 245, 179, 50;
+  --ion-color-secondary-contrast: #10372f;
+  --ion-color-secondary-contrast-rgb: 16, 55, 47;
+  --ion-color-secondary-shade: #d89e2c;
+  --ion-color-secondary-tint: #f6bb47;
+
+  /* Ionic tertiary */
+  --ion-color-tertiary: #1b4a42;
+  --ion-color-tertiary-rgb: 27, 74, 66;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+  --ion-color-tertiary-shade: #18413a;
+  --ion-color-tertiary-tint: #325c55;
+
+  /* Success */
+  --ion-color-success: #198754;
+  --ion-color-success-rgb: 25, 135, 84;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+  --ion-color-success-shade: #16774a;
+  --ion-color-success-tint: #309365;
+
+  /* Warning */
+  --ion-color-warning: #f5b332;
+  --ion-color-warning-rgb: 245, 179, 50;
+  --ion-color-warning-contrast: #10372f;
+  --ion-color-warning-contrast-rgb: 16, 55, 47;
+  --ion-color-warning-shade: #d89e2c;
+  --ion-color-warning-tint: #f6bb47;
+
+  /* Danger */
+  --ion-color-danger: #c8402a;
+  --ion-color-danger-rgb: 200, 64, 42;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #b03825;
+  --ion-color-danger-tint: #ce5340;
+
+  /* Medium */
+  --ion-color-medium: #64748b;
+  --ion-color-medium-rgb: 100, 116, 139;
+  --ion-color-medium-contrast: #ffffff;
+  --ion-color-medium-contrast-rgb: 255, 255, 255;
+  --ion-color-medium-shade: #58667a;
+  --ion-color-medium-tint: #748297;
+
+  /* Light */
+  --ion-color-light: #f7f8f6;
+  --ion-color-light-rgb: 247, 248, 246;
+  --ion-color-light-contrast: #10372f;
+  --ion-color-light-contrast-rgb: 16, 55, 47;
+  --ion-color-light-shade: #d9dad8;
+  --ion-color-light-tint: #f8f9f7;
+
+  /* Fondos generales */
+  --ion-background-color: #f7f8f6;
+  --ion-background-color-rgb: 247, 248, 246;
+
+  --ion-text-color: #10372f;
+  --ion-text-color-rgb: 16, 55, 47;
+
+  --ion-toolbar-background: #ffffff;
+  --ion-toolbar-color: #10372f;
+
+  --ion-item-background: #ffffff;
+  --ion-card-background: #ffffff;
+
+  --ion-border-color: #e5e9e6;
+
+  /* Tipografía */
+  --ion-font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+/* ==========================================
+   3. CONFIGURACIÓN GENERAL
+   ========================================== */
+
+html,
+body,
+ion-app {
+  background: var(--food-bg);
+  color: var(--food-primary);
+  font-family: var(--ion-font-family);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+ion-content {
+  --background: var(--food-bg);
+  --color: var(--food-primary);
+}
+
+/* ==========================================
+   4. ENCABEZADOS
+   ========================================== */
+
+ion-header {
+  box-shadow: none;
+}
+
+ion-header::after {
+  background-image: none !important;
+}
+
+ion-toolbar {
+  --background: #ffffff;
+  --color: var(--food-primary);
+  --border-color: var(--food-border);
+  --min-height: 58px;
+
+  --padding-start: 12px;
+  --padding-end: 12px;
+}
+
+ion-title {
+  color: var(--food-primary);
+  font-size: 19px;
+  font-weight: 750;
+  letter-spacing: -0.4px;
+}
+
+/* Encabezado verde opcional */
+ion-toolbar.food-toolbar-primary {
+  --background: var(--food-primary);
+  --color: #ffffff;
+}
+
+ion-toolbar.food-toolbar-primary ion-title {
+  color: #ffffff;
+}
+
+/* Encabezado principal verde en todas las páginas con ion-header.
+   Las barras secundarias (búsqueda y filtros) permanecen claras. */
+ion-header ion-toolbar:first-child {
+  --background: var(--food-primary);
+  --color: #ffffff;
+  --border-color: var(--food-primary);
+  --min-height: 64px;
+}
+
+ion-header ion-toolbar:first-child ion-title {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 750;
+}
+
+ion-header ion-toolbar:first-child ion-buttons,
+ion-header ion-toolbar:first-child ion-back-button {
+  --color: #ffffff;
+  color: #ffffff;
+}
+
+ion-header ion-toolbar:first-child ion-button,
+ion-header ion-toolbar:first-child ion-icon {
+  --color: #ffffff;
+  color: #ffffff;
+}
+
+/* ==========================================
+   FOODORDER - CORRECCIÓN DEL ENCABEZADO
+   ========================================== */
+
+/* Primera barra de cada encabezado */
+ion-header ion-toolbar:first-of-type {
+  --background: #10372f !important;
+  --color: #ffffff !important;
+  --border-color: #10372f;
+
+  background: #10372f !important;
+}
+
+/* Título blanco */
+ion-header ion-toolbar:first-of-type ion-title {
+  --color: #ffffff !important;
+  color: #ffffff !important;
+
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* Íconos del encabezado */
+ion-header ion-toolbar:first-of-type ion-icon {
+  color: #f5b332;
+}
+
+/* Eliminar sombras */
+ion-header {
+  box-shadow: none !important;
+}
+
+ion-header::after {
+  display: none !important;
+}
+
+
+/* ==========================================
+   5. LISTAS Y ELEMENTOS
+   ========================================== */
+
+ion-list {
+  background: transparent !important;
+  padding: 0;
+}
+
+ion-list[inset] {
+  margin: 14px 16px;
+  padding: 0;
+
+  background: #ffffff !important;
+  border: 1px solid var(--food-border);
+  border-radius: 14px;
+
+  overflow: hidden;
+}
+
+ion-item {
+  --background: #ffffff;
+  --color: var(--food-primary);
+
+  --border-color: var(--food-border);
+  --border-style: solid;
+
+  --padding-start: 16px;
+  --inner-padding-end: 16px;
+
+  --min-height: 64px;
+
+  --highlight-color-focused: var(--food-primary);
+  --highlight-color-valid: var(--food-primary);
+}
+
+ion-item::part(native) {
+  transition: background 0.15s ease;
+}
+
+ion-item ion-label {
+  color: var(--food-primary);
+}
+
+ion-item ion-label h2,
+ion-item ion-label h3 {
+  color: var(--food-primary);
+  font-weight: 650;
+}
+
+ion-item ion-label p {
+  color: var(--food-muted);
+  font-size: 13px;
+}
+
+ion-note {
+  color: var(--food-muted);
+  font-size: 13px;
+}
+
+/* ==========================================
+   6. BOTONES
+   ========================================== */
+
+ion-button {
+  --border-radius: 10px;
+  --box-shadow: none;
+
+  font-weight: 650;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+ion-button[color="primary"] {
+  --background: var(--food-primary);
+  --color: #ffffff;
+  --background-hover: var(--food-primary-light);
+  --background-activated: var(--food-primary-dark);
+}
+
+ion-button[color="secondary"] {
+  --background: var(--food-gold);
+  --color: var(--food-primary);
+  --background-hover: var(--food-gold-hover);
+}
+
+ion-button[fill="clear"] {
+  --color: var(--food-primary);
+}
+
+ion-button[fill="outline"] {
+  --border-color: var(--food-primary);
+  --color: var(--food-primary);
+}
+
+/* Botón dorado reutilizable */
+ion-button.food-button-gold {
+  --background: var(--food-gold);
+  --color: var(--food-primary);
+  --background-hover: var(--food-gold-hover);
+  --background-activated: var(--food-gold-hover);
+
+  font-weight: 700;
+}
+
+/* ==========================================
+   7. TARJETAS
+   ========================================== */
+
+ion-card {
+  --background: #ffffff;
+  --color: var(--food-primary);
+
+  margin: 12px 16px;
+
+  border: 1px solid var(--food-border);
+  border-radius: 16px;
+
+  box-shadow: none;
+}
+
+ion-card-header {
+  padding-bottom: 10px;
+}
+
+ion-card-title {
+  color: var(--food-primary);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+ion-card-subtitle {
+  color: var(--food-muted);
+  font-size: 12px;
+}
+
+ion-card-content {
+  color: var(--food-primary);
+}
+
+/* ==========================================
+   8. BARRAS DE BÚSQUEDA
+   ========================================== */
+
+ion-searchbar {
+  --background: #ffffff;
+  --color: var(--food-primary);
+
+  --placeholder-color: #89958f;
+  --icon-color: var(--food-primary);
+  --clear-button-color: var(--food-muted);
+
+  --border-radius: 12px;
+  --box-shadow: none;
+
+  padding: 10px 12px;
+}
+
+ion-searchbar .searchbar-input-container {
+  border: 1px solid var(--food-border);
+  border-radius: 12px;
+
+  overflow: hidden;
+}
+
+ion-searchbar .searchbar-input {
+  font-size: 14px;
+}
+
+/* ==========================================
+   9. FILTROS Y SEGMENTOS
+   ========================================== */
+
+ion-segment {
+  --background: #ffffff;
+
+  margin: 0;
+  padding: 4px;
+
+  border: 1px solid var(--food-border);
+  border-radius: 12px;
+}
+
+ion-segment-button {
+  --background: transparent;
+  --background-checked: var(--food-gold);
+
+  --color: var(--food-muted);
+  --color-checked: var(--food-primary);
+
+  --indicator-color: var(--food-gold);
+  --indicator-box-shadow: none;
+
+  --border-radius: 9px;
+
+  min-height: 42px;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+ion-segment-button::part(indicator-background) {
+  border-radius: 9px;
+}
+
+ion-segment-button.segment-button-checked {
+  font-weight: 700;
+}
+
+/* ==========================================
+   10. ESTADOS DE PEDIDOS
+   ========================================== */
+
+ion-badge {
+  border-radius: 8px;
+  padding: 6px 10px;
+
+  font-size: 12px;
+  font-weight: 650;
+
+  letter-spacing: 0;
+}
+
+/* Pendiente */
+ion-badge.estado-pendiente,
+.estado-pendiente {
+  --background: #fef3c7;
+  --color: #92400e;
+}
+
+/* Preparación */
+ion-badge.estado-preparacion,
+.estado-preparacion {
+  --background: #dbeafe;
+  --color: #1d4ed8;
+}
+
+/* Entregado */
+ion-badge.estado-entregado,
+.estado-entregado {
+  --background: #dcfce7;
+  --color: #166534;
+}
+
+/* Pagado */
+ion-badge.estado-pagado,
+.estado-pagado {
+  --background: #e5e7eb;
+  --color: #374151;
+}
+
+/* Cancelado */
+ion-badge.estado-cancelado,
+.estado-cancelado {
+  --background: #fee2e2;
+  --color: #991b1b;
+}
+
+/* ==========================================
+   11. NAVEGACIÓN INFERIOR
+   ========================================== */
+
+ion-tab-bar {
+  --background: #ffffff;
+  --color: var(--food-muted);
+
+  border-top: 1px solid var(--food-border);
+  border-bottom: none;
+
+  height: 66px;
+
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+ion-tab-button {
+  --background: #ffffff;
+
+  --color: var(--food-muted);
+  --color-selected: var(--food-primary);
+
+  font-size: 11px;
+  font-weight: 500;
+
+  letter-spacing: 0;
+}
+
+ion-tab-button ion-icon {
+  font-size: 21px;
+}
+
+ion-tab-button.tab-selected {
+  --color: var(--food-primary);
+
+  font-weight: 700;
+}
+
+ion-tab-button.tab-selected ion-icon {
+  color: var(--food-gold-hover);
+}
+
+/* ==========================================
+   12. FORMULARIOS
+   ========================================== */
+
+ion-input,
+ion-textarea,
+ion-select {
+  --color: var(--food-primary);
+  --placeholder-color: #89958f;
+
+  --highlight-color-focused: var(--food-primary);
+  --highlight-color-valid: var(--food-primary);
+}
+
+ion-checkbox {
+  --checkbox-background-checked: var(--food-primary);
+  --border-color-checked: var(--food-primary);
+}
+
+ion-radio {
+  --color-checked: var(--food-primary);
+}
+
+ion-toggle {
+  --track-background-checked: #d9e9e0;
+  --handle-background-checked: var(--food-primary);
+}
+
+/* ==========================================
+   13. FOOTER
+   ========================================== */
+
+ion-footer {
+  box-shadow: none;
+}
+
+ion-footer::before {
+  background-image: none !important;
+}
+
+ion-footer ion-toolbar {
+  --background: #ffffff;
+  --border-color: var(--food-border);
+}
+
+/* ==========================================
+   14. ALERTAS, MODALES Y TOAST
+   ========================================== */
+
+ion-alert,
+ion-modal,
+ion-popover,
+ion-toast,
+ion-action-sheet {
+  color-scheme: light;
+}
+
+ion-alert {
+  --background: #ffffff;
+  --color: var(--food-primary);
+}
+
+ion-modal {
+  --background: var(--food-bg);
+}
+
+ion-toast {
+  --border-radius: 12px;
+}
+
+/* ==========================================
+   15. REFRESHER Y SKELETON
+   ========================================== */
+
+ion-refresher {
+  color: var(--food-primary);
+}
+
+ion-refresher-content {
+  color: var(--food-primary);
+}
+
+ion-skeleton-text {
+  --background: #e5e9e6;
+  --background-rgb: 229, 233, 230;
+
+  border-radius: 6px;
+}
+
+/* ==========================================
+   16. UTILIDADES FOODORDER
+   ========================================== */
+
+.food-surface {
+  background: #ffffff;
+  border: 1px solid var(--food-border);
+  border-radius: 14px;
+}
+
+.food-section-title {
+  margin: 16px;
+
+  color: var(--food-primary);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.food-muted {
+  color: var(--food-muted);
+}
+
+.food-price {
+  color: var(--food-primary);
+  font-weight: 700;
+}
+
+.food-empty {
+  padding: 48px 20px;
+
+  color: var(--food-muted);
+  text-align: center;
+}
+
+.food-divider {
+  height: 1px;
+  background: var(--food-border);
+}
+
+/* ==========================================
+   17. SCROLLBAR
+   ========================================== */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5d0;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ==========================================
+   18. RESPONSIVE
+   ========================================== */
+
+@media (max-width: 480px) {
+  ion-title {
+    font-size: 18px;
+  }
+
+  ion-searchbar {
+    padding: 8px 10px;
+  }
+
+  ion-card {
+    margin: 10px 12px;
+  }
+
+  ion-segment-button {
+    font-size: 12px;
+    min-height: 40px;
+  }
+
+  ion-tab-button {
+    font-size: 10px;
+  }
+}
+
+/* ==========================================
+   19. ACCESIBILIDAD
+   ========================================== */
+
+:focus-visible {
+  outline: 2px solid var(--food-gold);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+

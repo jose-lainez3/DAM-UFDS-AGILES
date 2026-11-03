@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
 
-/** Añade el token Bearer y, si el servidor responde 401, vuelve al login. */
+/** Añade el token Bearer (si hay sesión) y, si el servidor responde 401 con un token caducado, cierra la sesión local. */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
   const router = inject(Router);
@@ -16,10 +16,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(peticion).pipe(
     catchError((error: HttpErrorResponse) => {
-      const esAuth = req.url.includes('/auth/login');
+      const esAuth = req.url.includes('/auth/login') || req.url.includes('/auth/register');
       if (error.status === 401 && !esAuth && auth.isLoggedIn()) {
         auth.limpiar();
-        router.navigateByUrl('/login', { replaceUrl: true });
+        router.navigate(['/login'], { replaceUrl: true, queryParams: { returnUrl: router.url } });
       }
       return throwError(() => error);
     }),

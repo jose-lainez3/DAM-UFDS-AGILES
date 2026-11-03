@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,9 +11,19 @@ class Cliente extends Model
 
     protected $table = 'clientes';
 
-    protected $fillable = ['nombre', 'apellido', 'correo', 'telefono'];
+    protected $fillable = [
+        'usuario_id',
+        'nombre',
+        'apellido',
+        'correo',
+        'telefono',
+    ];
 
-    // Relación: Un cliente tiene muchos pedidos
+    public function usuario()
+    {
+        return $this->belongsTo(Usuario::class, 'usuario_id');
+    }
+
     public function pedidos()
     {
         return $this->hasMany(Pedido::class, 'cliente_id');

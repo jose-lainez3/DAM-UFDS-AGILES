@@ -96,9 +96,20 @@ const router = createRouter({
 
 router.beforeEach((to) => {
   const logged = isAuthenticated()
+  const esCliente = logged && hasRole('Cliente')
 
+  // 1. REGLA NUEVA: Si es un Cliente, bloquearle el acceso a todo el panel y dejarlo en el login
+  if (esCliente && to.name !== 'login') {
+    return { name: 'login' }
+  }
+
+  // 2. Si requiere autenticación y no está logueado
   if (to.meta.requiresAuth && !logged) return { name: 'login' }
-  if (to.meta.guestOnly && logged) return { name: 'pedidosView' }
+  
+  // 3. Si va al login pero ya está logueado (y NO es cliente), mandarlo a Pedidos
+  if (to.meta.guestOnly && logged && !esCliente) return { name: 'pedidosView' }
+  
+  // 4. Si la ruta exige un rol específico (Admin) y no lo tiene, mandarlo a Pedidos
   if (to.meta.roles && !hasRole(...to.meta.roles)) return { name: 'pedidosView' }
 })
 

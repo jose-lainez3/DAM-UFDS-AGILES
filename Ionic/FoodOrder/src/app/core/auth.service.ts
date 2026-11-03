@@ -3,10 +3,15 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Usuario } from './models';
+import { RegistroPayload, Usuario } from './models';
 
 const TOKEN_KEY = 'foodorder_token';
 const USER_KEY = 'foodorder_user';
+
+interface RespuestaAuth {
+  token: string;
+  usuario: Usuario;
+}
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -23,14 +28,20 @@ export class AuthService {
     return localStorage.getItem(TOKEN_KEY);
   }
 
-  /** POST /api/auth/login → guarda el token Sanctum y el usuario. */
+  /** POST /api/auth/login → guarda el token y el usuario (la sesión sigue al cerrar y abrir la app). */
   async login(username: string, clave: string): Promise<void> {
     const data = await firstValueFrom(
-      this.http.post<{ token: string; usuario: Usuario }>(`${environment.apiUrl}/auth/login`, { username, clave }),
+      this.http.post<RespuestaAuth>(`${environment.apiUrl}/auth/login`, { username, clave }),
     );
-    localStorage.setItem(TOKEN_KEY, data.token);
-    localStorage.setItem(USER_KEY, JSON.stringify(data.usuario));
-    this._user.set(data.usuario);
+    this.guardar(data);
+  }
+
+  /** POST /api/auth/register → crea la cuenta en la BD y deja la sesión iniciada. */
+  async registrar(datos: RegistroPayload): Promise<void> {
+    const data = await firstValueFrom(
+      this.http.post<RespuestaAuth>(`${environment.apiUrl}/auth/register`, datos),
+    );
+    this.guardar(data);
   }
 
   /** Cierra sesión: limpia el estado local y revoca el token en el servidor (sin esperar). */
@@ -43,7 +54,7 @@ export class AuthService {
         .post(`${environment.apiUrl}/auth/logout`, null, { headers: { Authorization: `Bearer ${token}` } })
         .subscribe({ error: () => undefined });
     }
-    this.router.navigateByUrl('/login', { replaceUrl: true });
+    this.router.navigateByUrl('/tabs/menu', { replaceUrl: true });
   }
 
   /** Limpia la sesión sin navegar (lo usa el interceptor cuando el token caduca). */
@@ -51,6 +62,12 @@ export class AuthService {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     this._user.set(null);
+  }
+
+  private guardar(data: RespuestaAuth) {
+    localStorage.setItem(TOKEN_KEY, data.token);
+    localStorage.setItem(USER_KEY, JSON.stringify(data.usuario));
+    this._user.set(data.usuario);
   }
 
   private leerUsuario(): Usuario | null {

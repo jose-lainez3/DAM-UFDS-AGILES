@@ -1,9 +1,16 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { Categoria, Cliente, EstadoPedido, Mesa, NuevoPedido, Pedido, Producto } from './models';
+import { Categoria, EstadoPedido, NuevoPedido, Pedido, Producto } from './models';
 
-/** Acceso tipado a la API de Laravel (/api). El token lo añade authInterceptor. */
+export interface Mesa {
+  id: number;
+  numero_mesa: number;
+  capacidad: number;
+  estado: 'disponible' | 'ocupada' | 'reservada' | string;
+}
+
+/** API Laravel. El authInterceptor agrega el token Sanctum. */
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private http = inject(HttpClient);
@@ -23,20 +30,8 @@ export class ApiService {
     return this.http.post<{ message: string; data: Pedido }>(`${this.base}/pedidos`, payload);
   }
 
-  cambiarEstado(id: number, estado: EstadoPedido) {
-    return this.http.put<{ message: string; data: Pedido }>(`${this.base}/pedidos/${id}`, { estado });
-  }
-
-  mesas() {
-    return this.http.get<Mesa[]>(`${this.base}/mesas`);
-  }
-
-  clientes() {
-    return this.http.get<Cliente[]>(`${this.base}/clientes`);
-  }
-
-  crearCliente(cliente: Pick<Cliente, 'nombre' | 'apellido'>) {
-    return this.http.post<{ message: string; data: Cliente }>(`${this.base}/clientes`, cliente);
+  cancelarPedido(id: number) {
+    return this.http.put<{ message: string; data: Pedido }>(`${this.base}/pedidos/${id}`, { estado: 'cancelado' });
   }
 
   productos() {
@@ -45,6 +40,15 @@ export class ApiService {
 
   categorias() {
     return this.http.get<Categoria[]>(`${this.base}/categorias`);
+  }
+
+  mesas() {
+    return this.http.get<Mesa[]>(`${this.base}/mesas`);
+  }
+
+  /** Mesas que se pueden seleccionar al crear un pedido. */
+  mesasDisponibles() {
+    return this.mesas(); // Filtrar estado === 'disponible' en el carrito.
   }
 
   configuracion() {

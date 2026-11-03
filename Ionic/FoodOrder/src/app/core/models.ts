@@ -29,6 +29,16 @@ export interface Usuario {
   rol_id: number;
   estado: string;
   rol?: Rol;
+  cliente?: Cliente | null;
+}
+
+export interface RegistroPayload {
+  nombre: string;
+  apellido: string;
+  correo: string;
+  telefono?: string;
+  username: string;
+  clave: string;
 }
 
 export interface Cliente {
@@ -82,10 +92,13 @@ export interface Pedido {
 }
 
 export interface NuevoPedido {
-  cliente_id: number;
+  cliente_id?: number | null;
   mesa_id: number | null;
   estado: EstadoPedido;
-  detalles: { producto_id: number; cantidad: number }[];
+  detalles: {
+    producto_id: number;
+    cantidad: number;
+  }[];
 }
 
 export function nombreCompleto(c?: Cliente | null): string {

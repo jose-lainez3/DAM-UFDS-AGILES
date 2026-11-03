@@ -38,6 +38,18 @@ describe('AuthService + authInterceptor', () => {
     req.flush([]);
   });
 
+  it('registrar crea la cuenta y deja la sesión iniciada', async () => {
+    const promesa = auth.registrar({ nombre: 'Ana', apellido: 'Pérez', correo: 'ana@mail.com', username: 'ana', clave: '123456' });
+
+    const reg = backend.expectOne(`${environment.apiUrl}/auth/register`);
+    expect(reg.request.method).toBe('POST');
+    reg.flush({ token: 'nuevo', usuario: { id: 5, username: 'ana', correo: 'ana@mail.com', rol_id: 3, estado: 'activo' } });
+    await promesa;
+
+    expect(auth.isLoggedIn()).toBe(true);
+    expect(localStorage.getItem('foodorder_token')).toBe('nuevo');
+  });
+
   it('un 401 en una ruta protegida cierra la sesión local', async () => {
     const promesa = auth.login('admin', 'admin123');
     backend.expectOne(`${environment.apiUrl}/auth/login`).flush({ token: 't', usuario: { id: 1, username: 'admin', correo: '', rol_id: 1, estado: 'activo' } });

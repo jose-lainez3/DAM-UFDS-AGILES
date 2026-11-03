@@ -1,1 +1,175 @@
 
+
+/* ==========================================
+   FOODORDER - BARRA DE NAVEGACIÓN INFERIOR
+   ========================================== */
+
+:host {
+  --food-green: #10372f;
+  --food-gold: #f5b332;
+  --food-gray: #718096;
+  --food-white: #ffffff;
+  --food-border: #e5e9e6;
+}
+
+/* ==========================================
+   BARRA INFERIOR
+   ========================================== */
+
+.foodorder-tabs {
+  --background: var(--food-white);
+  --border: none;
+
+  background: var(--food-white);
+
+  border-top: 1px solid var(--food-border);
+
+  height: 70px;
+
+  padding: 4px 6px;
+
+  box-shadow: none;
+}
+
+/* ==========================================
+   BOTONES DE NAVEGACIÓN
+   ========================================== */
+
+ion-tab-button {
+  --background: var(--food-white);
+  --background-focused: var(--food-white);
+
+  --color: var(--food-gray);
+  --color-selected: var(--food-green);
+
+  min-width: 0;
+
+  color: var(--food-gray);
+
+  font-family: 'Inter', Arial, sans-serif;
+
+  font-size: 11px;
+  font-weight: 500;
+
+  letter-spacing: 0;
+
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+/* ==========================================
+   ÍCONOS
+   ========================================== */
+
+ion-tab-button ion-icon {
+  font-size: 23px;
+
+  margin-bottom: 4px;
+
+  color: var(--food-gray);
+
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+/* ==========================================
+   ETIQUETAS
+   ========================================== */
+
+ion-tab-button ion-label {
+  margin-top: 2px;
+
+  font-size: 11px;
+  font-weight: 500;
+
+  color: var(--food-gray);
+}
+
+/* ==========================================
+   PESTAÑA ACTIVA
+   ========================================== */
+
+ion-tab-button.tab-selected {
+  --color: var(--food-green);
+  --color-selected: var(--food-green);
+
+  color: var(--food-green);
+}
+
+ion-tab-button.tab-selected ion-icon {
+  color: var(--food-gold);
+}
+
+ion-tab-button.tab-selected ion-label {
+  color: var(--food-green);
+
+  font-weight: 700;
+}
+
+/* ==========================================
+   EFECTO AL PRESIONAR
+   ========================================== */
+
+ion-tab-button:active ion-icon {
+  transform: scale(0.92);
+}
+
+/* ==========================================
+   CONTADOR DEL CARRITO
+   ========================================== */
+
+.carrito-badge {
+  --background: #c8402a;
+  --color: #ffffff;
+
+  position: absolute;
+
+  top: 3px;
+  left: calc(50% + 8px);
+
+  min-width: 18px;
+  height: 18px;
+
+  padding: 3px 5px;
+
+  border-radius: 999px;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  text-align: center;
+
+  z-index: 2;
+}
+
+/* ==========================================
+   ADAPTACIÓN A PANTALLAS PEQUEÑAS
+   ========================================== */
+
+@media (max-width: 380px) {
+
+  .foodorder-tabs {
+    height: 65px;
+    padding: 3px 2px;
+  }
+
+  ion-tab-button ion-icon {
+    font-size: 21px;
+  }
+
+  ion-tab-button ion-label {
+    font-size: 10px;
+  }
+
+}
+
+/* ==========================================
+   ACCESIBILIDAD
+   ========================================== */
+
+ion-tab-button:focus-visible {
+  outline: 2px solid var(--food-gold);
+  outline-offset: -3px;
+}

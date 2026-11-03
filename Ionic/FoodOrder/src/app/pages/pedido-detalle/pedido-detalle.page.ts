@@ -6,13 +6,7 @@ import {
 } from '@ionic/angular';
 import { ApiService } from '../../core/api.service';
 import { errorMessage } from '../../core/errors';
-import { COLOR_ESTADO, ESTADOS, EstadoPedido, Pedido, nombreCompleto } from '../../core/models';
-
-const SIGUIENTE: Partial<Record<EstadoPedido, { estado: EstadoPedido; texto: string }>> = {
-  pendiente: { estado: 'preparacion', texto: 'Enviar a preparación' },
-  preparacion: { estado: 'entregado', texto: 'Marcar como entregado' },
-  entregado: { estado: 'pagado', texto: 'Cobrar y cerrar pedido' },
-};
+import { COLOR_ESTADO, ESTADOS, Pedido } from '../../core/models';
 
 @Component({
   selector: 'app-pedido-detalle',
@@ -38,12 +32,6 @@ const SIGUIENTE: Partial<Record<EstadoPedido, { estado: EstadoPedido; texto: str
             <ion-label>Estado</ion-label>
             <ion-badge slot="end" [color]="color()">{{ etiqueta() }}</ion-badge>
           </ion-item>
-          <ion-item><ion-label>Cliente</ion-label><ion-note slot="end">{{ cliente() }}</ion-note></ion-item>
-          <ion-item>
-            <ion-label>Ubicación</ion-label>
-            <ion-note slot="end">{{ p.mesa ? 'Mesa ' + p.mesa.numero_mesa : 'Para llevar' }}</ion-note>
-          </ion-item>
-          <ion-item><ion-label>Atendido por</ion-label><ion-note slot="end">{{ p.usuario?.username ?? '—' }}</ion-note></ion-item>
           <ion-item>
             <ion-label>Fecha</ion-label>
             <ion-note slot="end">{{ p.fecha_pedido ?? p.created_at | date: 'dd/MM HH:mm' }}</ion-note>
@@ -70,9 +58,6 @@ const SIGUIENTE: Partial<Record<EstadoPedido, { estado: EstadoPedido; texto: str
         </ion-list>
 
         <div class="acciones">
-          @if (siguiente(); as s) {
-            <ion-button expand="block" [disabled]="actualizando()" (click)="cambiar(s.estado)">{{ s.texto }}</ion-button>
-          }
           @if (puedeCancelar()) {
             <ion-button expand="block" fill="outline" color="danger" [disabled]="actualizando()" (click)="confirmarCancelar()">
               Cancelar pedido
@@ -102,11 +87,9 @@ export class PedidoDetallePage {
   actualizando = signal(false);
   error = signal('');
 
-  cliente = computed(() => nombreCompleto(this.pedido()?.cliente));
   etiqueta = computed(() => (this.pedido() ? ESTADOS[this.pedido()!.estado] : ''));
   color = computed(() => (this.pedido() ? COLOR_ESTADO[this.pedido()!.estado] : 'medium'));
-  siguiente = computed(() => (this.pedido() ? SIGUIENTE[this.pedido()!.estado] : undefined));
-  puedeCancelar = computed(() => ['pendiente', 'preparacion'].includes(this.pedido()?.estado ?? ''));
+  puedeCancelar = computed(() => this.pedido()?.estado === 'pendiente');
   subtotal = computed(() => (this.pedido()?.detalles ?? []).reduce((s, d) => s + Number(d.subtotal), 0));
   impuestos = computed(() => Math.max(0, Number(this.pedido()?.precio_total ?? 0) - this.subtotal()));
 
@@ -129,13 +112,13 @@ export class PedidoDetallePage {
     });
   }
 
-  cambiar(estado: EstadoPedido) {
+  cancelar() {
     this.actualizando.set(true);
-    this.api.cambiarEstado(Number(this.id()), estado).subscribe({
+    this.api.cancelarPedido(Number(this.id())).subscribe({
       next: async (r) => {
         this.pedido.set(r.data);
         this.actualizando.set(false);
-        (await this.toast.create({ message: `Pedido ${ESTADOS[estado].toLowerCase()}.`, duration: 1800, color: 'success' })).present();
+        (await this.toast.create({ message: 'Pedido cancelado.', duration: 1800, color: 'success' })).present();
       },
       error: async (e) => {
         this.actualizando.set(false);
@@ -147,10 +130,10 @@ export class PedidoDetallePage {
   async confirmarCancelar() {
     const alerta = await this.alertas.create({
       header: 'Cancelar pedido',
-      message: '¿Seguro? Se liberará la mesa.',
+      message: '¿Seguro que quieres cancelar este pedido?',
       buttons: [
         { text: 'No', role: 'cancel' },
-        { text: 'Sí, cancelar', role: 'destructive', handler: () => this.cambiar('cancelado') },
+        { text: 'Sí, cancelar', role: 'destructive', handler: () => this.cancelar() },
       ],
     });
     await alerta.present();

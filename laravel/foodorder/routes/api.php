@@ -29,6 +29,12 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+// ---------- Rutas Públicas (Menú) ----------
+// Se permite ver las categorías y productos sin necesidad de token
+Route::apiResource('categorias', CategoriaController::class)->only(['index', 'show']);
+Route::apiResource('productos', ProductoController::class)->only(['index', 'show']);
+
+
 // ---------- Rutas protegidas con token (Sanctum) ----------
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -51,10 +57,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('usuarios', UsuarioController::class);
     });
 
+    // Rutas protegidas de Categorías y Productos (crear, actualizar, eliminar)
+    Route::apiResource('categorias', CategoriaController::class)->except(['index', 'show']);
+    Route::apiResource('productos', ProductoController::class)->except(['index', 'show']);
+
+    // Resto de operaciones que sí requieren estar logueado
     Route::apiResource('clientes', ClienteController::class);
     Route::apiResource('mesas', MesaController::class);
-    Route::apiResource('categorias', CategoriaController::class);
-    Route::apiResource('productos', ProductoController::class);
     Route::apiResource('pedidos', PedidoController::class);
     Route::apiResource('detalle-pedidos', DetallePedidoController::class);
     Route::apiResource('inventarios', InventarioController::class);

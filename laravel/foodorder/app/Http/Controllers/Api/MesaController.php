@@ -6,57 +6,115 @@ use App\Http\Controllers\Controller;
 use App\Models\Mesa;
 use App\Models\Pedido;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
-
+use Illuminate\Validation\ValidationException;
 class MesaController extends Controller
 {
     public function index()
     {
-        return response()->json(Mesa::orderBy('numero_mesa')->get(), 200);
+        return response()->json(
+            Mesa::orderBy('numero_mesa')->get(),
+            200
+        );
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'numero_mesa' => 'required|integer|unique:mesas,numero_mesa',
+            'numero_mesa' => 'required|integer|min:1|unique:mesas,numero_mesa',
             'capacidad' => 'required|integer|min:1',
-            'estado' => ['nullable', Rule::in(Mesa::ESTADOS)]
+            'estado' => ['nullable', Rule::in(Mesa::ESTADOS)],
         ]);
 
         $validated['estado'] = $validated['estado'] ?? 'disponible';
 
         $mesa = Mesa::create($validated);
-        return response()->json(['message' => 'Mesa creada con éxito', 'data' => $mesa], 201);
+
+        return response()->json([
+            'message' => 'Mesa creada con éxito',
+            'data' => $mesa,
+        ], 201);
     }
 
     public function show(Mesa $mesa)
     {
-        return response()->json($mesa->load('pedidos'), 200);
+        return response()->json(
+            $mesa->load('pedidos'),
+            200
+        );
     }
 
     public function update(Request $request, Mesa $mesa)
     {
         $validated = $request->validate([
-            'numero_mesa' => 'sometimes|integer|unique:mesas,numero_mesa,' . $mesa->id,
+            'numero_mesa' => [
+                'sometimes',
+                'integer',
+                'min:1',
+                Rule::unique('mesas', 'numero_mesa')->ignore($mesa->id),
+            ],
             'capacidad' => 'sometimes|integer|min:1',
-            'estado' => ['sometimes', Rule::in(Mesa::ESTADOS)]
+            'estado' => ['sometimes', Rule::in(Mesa::ESTADOS)],
         ]);
 
-        $mesa->update($validated);
-        return response()->json(['message' => 'Mesa actualizada con éxito', 'data' => $mesa], 200);
+        $mesa = DB::transaction(function () use ($mesa, $validated) {
+            $mesa = Mesa::whereKey($mesa->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $tieneActivos = $mesa->pedidos()
+                ->whereNotIn('estado', Pedido::ESTADOS_FINALES)
+                ->exists();
+
+            if ($tieneActivos &&
+                isset($validated['estado']) &&
+                $validated['estado'] !== 'ocupada') {
+                throw ValidationException::withMessages([
+                    'estado' => 'No puedes liberar o reservar una mesa con pedidos activos.',
+                ]);
+            }
+
+            $mesa->update($validated);
+
+            return $mesa;
+        });
+
+        return response()->json([
+            'message' => 'Mesa actualizada con éxito',
+            'data' => $mesa,
+        ], 200);
     }
 
     public function destroy(Mesa $mesa)
     {
-        $activos = $mesa->pedidos()->whereNotIn('estado', Pedido::ESTADOS_FINALES)->exists();
+        return DB::transaction(function () use ($mesa) {
+            $mesa = Mesa::whereKey($mesa->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        if ($activos) {
+            $activos = $mesa->pedidos()
+                ->whereNotIn('estado', Pedido::ESTADOS_FINALES)
+                ->exists();
+
+            if ($activos) {
+                return response()->json([
+                    'message' => 'La mesa tiene pedidos activos y no se puede eliminar.',
+                ], 409);
+            }
+
+            // Si existen pedidos históricos, conservamos su referencia.
+            if ($mesa->pedidos()->exists()) {
+                return response()->json([
+                    'message' => 'La mesa tiene un historial de pedidos. No se puede eliminar.',
+                ], 409);
+            }
+
+            $mesa->delete();
+
             return response()->json([
-                'message' => 'La mesa tiene pedidos activos y no se puede eliminar.'
-            ], 409);
-        }
-
-        $mesa->delete();
-        return response()->json(['message' => 'Mesa eliminada con éxito'], 200);
+                'message' => 'Mesa eliminada con éxito',
+            ], 200);
+        });
     }
 }

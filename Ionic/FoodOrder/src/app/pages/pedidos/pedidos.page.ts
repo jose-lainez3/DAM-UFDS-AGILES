@@ -1,18 +1,16 @@
-import { CurrencyPipe } from '@angular/common';
+import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
-  IonBadge, IonContent, IonHeader, IonIcon, IonItem, IonLabel, IonList, IonNote, IonRefresher,
+  IonBadge, IonButton, IonContent, IonHeader, IonItem, IonLabel, IonList, IonNote, IonRefresher,
   IonRefresherContent, IonSearchbar, IonSegment, IonSegmentButton, IonSkeletonText, IonTitle, IonToolbar,
-  IonFab, IonFabButton, ToastController,
+  ToastController,
 } from '@ionic/angular';
 import { RefresherCustomEvent } from '@ionic/core';
-import { addIcons } from 'ionicons';
-import { add } from 'ionicons/icons';
 import { ApiService } from '../../core/api.service';
 import { errorMessage } from '../../core/errors';
-import { COLOR_ESTADO, ESTADOS, Pedido, nombreCompleto } from '../../core/models';
+import { COLOR_ESTADO, ESTADOS, Pedido } from '../../core/models';
 
 type Filtro = 'todos' | 'pendiente' | 'preparacion' | 'entregado';
 
@@ -20,23 +18,23 @@ type Filtro = 'todos' | 'pendiente' | 'preparacion' | 'entregado';
   selector: 'app-pedidos',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CurrencyPipe, FormsModule, RouterLink, IonHeader, IonToolbar, IonTitle, IonContent, IonSegment,
+    CurrencyPipe, DatePipe, FormsModule, RouterLink, IonHeader, IonToolbar, IonTitle, IonContent, IonSegment,
     IonSegmentButton, IonLabel, IonSearchbar, IonList, IonItem, IonBadge, IonNote, IonRefresher,
-    IonRefresherContent, IonSkeletonText, IonFab, IonFabButton, IonIcon,
+    IonRefresherContent, IonSkeletonText, IonButton,
   ],
   template: `
     <ion-header>
       <ion-toolbar>
-        <ion-title>Pedidos</ion-title>
+        <ion-title>Mis pedidos</ion-title>
       </ion-toolbar>
       <ion-toolbar>
-        <ion-searchbar placeholder="Buscar pedido o cliente" [debounce]="200" (ionInput)="busqueda.set($any($event).detail.value ?? '')" />
+        <ion-searchbar placeholder="Buscar por número de pedido" [debounce]="200" (ionInput)="busqueda.set($any($event).detail.value ?? '')" />
       </ion-toolbar>
       <ion-toolbar>
         <ion-segment [value]="filtro()" (ionChange)="filtro.set($any($event).detail.value)" scrollable>
           <ion-segment-button value="todos"><ion-label>Todos</ion-label></ion-segment-button>
           <ion-segment-button value="pendiente"><ion-label>Pendientes</ion-label></ion-segment-button>
-          <ion-segment-button value="preparacion"><ion-label>Preparación</ion-label></ion-segment-button>
+          <ion-segment-button value="preparacion"><ion-label>En preparación</ion-label></ion-segment-button>
           <ion-segment-button value="entregado"><ion-label>Entregados</ion-label></ion-segment-button>
         </ion-segment>
       </ion-toolbar>
@@ -56,15 +54,16 @@ type Filtro = 'todos' | 'pendiente' | 'preparacion' | 'entregado';
         </ion-list>
       } @else if (!visibles().length) {
         <div class="vacio">
-          <p>{{ error() || 'No hay pedidos que mostrar.' }}</p>
+          <p>{{ error() || 'Todavía no tienes pedidos.' }}</p>
+          <ion-button fill="outline" routerLink="/tabs/menu">Ver el menú</ion-button>
         </div>
       } @else {
         <ion-list>
           @for (p of visibles(); track p.id) {
             <ion-item [routerLink]="['/tabs/pedido', p.id]" detail="true" button>
               <ion-label>
-                <h2>#{{ p.id }} · {{ p.mesa ? 'Mesa ' + p.mesa.numero_mesa : 'Para llevar' }}</h2>
-                <p>{{ nombre(p.cliente) }}</p>
+                <h2>Pedido #{{ p.id }}</h2>
+                <p>{{ p.fecha_pedido ?? p.created_at | date: 'dd/MM HH:mm' }}</p>
                 <ion-note>{{ p.precio_total | currency: 'USD' }}</ion-note>
               </ion-label>
               <ion-badge slot="end" [color]="color(p)">{{ etiqueta(p) }}</ion-badge>
@@ -73,9 +72,6 @@ type Filtro = 'todos' | 'pendiente' | 'preparacion' | 'entregado';
         </ion-list>
       }
 
-      <ion-fab slot="fixed" vertical="bottom" horizontal="end">
-        <ion-fab-button routerLink="/tabs/nuevo" aria-label="Nuevo pedido"><ion-icon name="add" /></ion-fab-button>
-      </ion-fab>
     </ion-content>
   `,
   styles: `
@@ -96,21 +92,16 @@ export class PedidosPage {
     const term = this.busqueda().trim().toLowerCase();
     return this.pedidos().filter((p) => {
       const okEstado = this.filtro() === 'todos' || p.estado === this.filtro();
-      const okTexto = !term || String(p.id).includes(term) || nombreCompleto(p.cliente).toLowerCase().includes(term);
+      const okTexto = !term || String(p.id).includes(term.replace('#', ''));
       return okEstado && okTexto;
     });
   });
-
-  constructor() {
-    addIcons({ add });
-  }
 
   // Ciclo de vida de Ionic: se recarga cada vez que se vuelve a esta pestaña
   ionViewWillEnter() {
     this.cargar();
   }
 
-  nombre = nombreCompleto;
   etiqueta = (p: Pedido) => ESTADOS[p.estado];
   color = (p: Pedido) => COLOR_ESTADO[p.estado];
 
