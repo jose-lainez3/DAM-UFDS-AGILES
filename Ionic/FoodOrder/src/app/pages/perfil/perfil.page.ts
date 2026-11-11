@@ -30,7 +30,7 @@ import { nombreCompleto } from '../../core/models';
         </div>
       } @else {
         <div class="invitado">
-          <div class="invitado__logo">🍽️</div>
+          <img src="assets/logo.png" alt="Logo de FoodOrder" class="invitado__logo" />
           <h2>Bienvenido a FoodOrder</h2>
           <p>Inicia sesión o crea una cuenta para hacer pedidos y ver tu historial.</p>
           <ion-button expand="block" (click)="ir('/login')">Iniciar sesión</ion-button>
@@ -41,7 +41,7 @@ import { nombreCompleto } from '../../core/models';
   `,
   styles: `
     .invitado { max-width: 420px; margin: 0 auto; padding: 48px 24px; text-align: center; }
-    .invitado__logo { font-size: 56px; }
+    .invitado__logo { display: block; width: 115px; height: 115px; max-width: 100%; object-fit: contain; margin: 0 auto; }
     .invitado p { color: var(--ion-color-medium); margin-bottom: 24px; }
     .invitado ion-button { margin-top: 8px; }
   `,

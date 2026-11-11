@@ -29,7 +29,6 @@ import {
   remove,
   searchOutline,
   restaurantOutline,
-  fastFoodOutline,
   refreshOutline,
 } from 'ionicons/icons';
 
@@ -37,6 +36,26 @@ import { ApiService } from '../../core/api.service';
 import { CartService } from '../../core/cart.service';
 import { errorMessage } from '../../core/errors';
 import { Producto } from '../../core/models';
+
+const IMAGENES: [RegExp, string][] = [
+    [/tres\s+leches/, 'tres-leches'], [/helado/, 'helado-vainilla'],
+    [/brownie/, 'brownie'], [/flan/, 'flan-vainilla'], [/cheesecake|pastel de queso/, 'cheesecake'],
+    [/plato tipico/, 'plato-tipico'], [/tamal/, 'tamales-pollo'],
+    [/pasteles? de carne/, 'pasteles-carne'], [/yuca/, 'yuca-frita'],
+    [/pupusa.*revuelta/, 'pupusas-revueltas'], [/pupusa.*queso/, 'pupusas-queso'],
+    [/tostada.*francesa/, 'tostadas-francesas'], [/sandwich.*desayuno/, 'sandwich-desayuno'],
+    [/panqueque|pancake/, 'panqueques'], [/omelette|omelet/, 'omelette'],
+    [/huevos? rancheros?/, 'huevos-rancheros'], [/desayuno tipico/, 'desayuno-tipico'],
+    [/coca[\s-]*cola/, 'coca-cola'], [/sprite/, 'sprite'],
+    [/horchata/, 'horchata'], [/cafe|americano/, 'cafe'], [/agua/, 'agua'],
+    [/nacho/, 'nachos'], [/hot[\s-]*dog|perro caliente/, 'hotdog'],
+    [/ensalada/, 'ensalada'], [/papa/, 'papas'],
+    [/hamburguesa|burger/, 'hamburguesa'], [/pizza/, 'pizza'],
+    [/pollo|alita/, 'pollo'], [/naranja/, 'jugo-naranja'],
+    [/limonada|limon/, 'limonada'], [/pastel|tarta|torta|chocolate|postre/, 'pastel-chocolate'],
+    [/jugo|zumo|bebida|refresco|soda|gaseosa/, 'limonada'],
+    [/entrada|vegetal|verdura/, 'ensalada'], [/plato|comida/, 'pollo']
+];
 
 @Component({
   selector: 'app-menu',
@@ -177,7 +196,7 @@ import { Producto } from '../../core/models';
                   <!-- ÍCONO DEL PRODUCTO -->
                   <div class="product-visual">
                     <div class="product-icon">
-                      <ion-icon name="fast-food-outline" />
+                      <img [src]="imagenPara(p)" [alt]="p.nombre" loading="lazy" decoding="async" />
                     </div>
 
                     @if (cart.cantidad(p.id) > 0) {
@@ -508,14 +527,19 @@ import { Producto } from '../../core/models';
     }
 
     .product-icon {
+      width: 100%;
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--food-green);
     }
 
-    .product-icon ion-icon {
-      font-size: 35px;
+    .product-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 11px;
     }
 
     .quantity-badge {
@@ -798,9 +822,16 @@ export class MenuPage {
       remove,
       searchOutline,
       restaurantOutline,
-      fastFoodOutline,
       refreshOutline,
     });
+  }
+
+  imagenPara(producto: Producto): string {
+    const normalizar = (texto: string) => texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const porNombre = IMAGENES.find(([regex]) => regex.test(normalizar(producto.nombre)));
+    const porCategoria = IMAGENES.find(([regex]) => regex.test(normalizar(producto.categoria?.nombre ?? '')));
+    const archivo = (porNombre ?? porCategoria)?.[1] ?? 'pollo';
+    return `assets/producto-${archivo}.jpg`;
   }
 
   ionViewWillEnter() {

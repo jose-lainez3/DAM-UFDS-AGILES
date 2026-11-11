@@ -213,9 +213,8 @@
 
                                 <div class="product-card__image" :class="`product-card__image--${producto.color}`">
 
-                                    <span class="product-card__emoji">
-                                        {{ producto.icono }}
-                                    </span>
+                                    <img class="product-card__photo" :src="producto.imagen" :alt="producto.nombre"
+                                        loading="lazy" decoding="async" />
 
                                     <span class="product-card__category">
                                         {{ producto.categoria }}
@@ -426,13 +425,25 @@ import api from '@/services/api'
 import { getUser, logout as endSession } from '@/services/auth'
 import { errorMessage, fullName } from '@/services/utils'
 
-// La base de datos no guarda emoji ni color: se deducen del nombre/categoría del producto.
-const ICONOS = [
-    [/ensalada/, '🥗'], [/papa/, '🍟'], [/hamburguesa/, '🍔'], [/pizza/, '🍕'], [/pollo/, '🍗'],
-    [/limon/, '🍋'], [/naranja/, '🍊'], [/pastel|torta|helado|flan/, '🍰'], [/cerveza/, '🍺'],
-    [/cafe/, '☕'], [/agua/, '💧'], [/taco/, '🌮'], [/pasta|espagueti/, '🍝'], [/sopa/, '🍲'],
-    [/pescado|marisco|camaron/, '🐟'], [/carne|bistec|steak/, '🥩'], [/sandwich/, '🥪'],
-    [/jugo|bebida|refresco|soda|gaseosa/, '🥤'], [/postre/, '🍰'], [/entrada/, '🥗']
+// Las imagenes locales se seleccionan por producto y categoria.
+const IMAGENES = [
+    [/tres\s+leches/, 'tres-leches'], [/helado/, 'helado-vainilla'],
+    [/brownie/, 'brownie'], [/flan/, 'flan-vainilla'], [/cheesecake|pastel de queso/, 'cheesecake'],
+    [/plato tipico/, 'plato-tipico'], [/tamal/, 'tamales-pollo'],
+    [/pasteles? de carne/, 'pasteles-carne'], [/yuca/, 'yuca-frita'],
+    [/pupusa.*revuelta/, 'pupusas-revueltas'], [/pupusa.*queso/, 'pupusas-queso'],
+    [/tostada.*francesa/, 'tostadas-francesas'], [/sandwich.*desayuno/, 'sandwich-desayuno'],
+    [/panqueque|pancake/, 'panqueques'], [/omelette|omelet/, 'omelette'],
+    [/huevos? rancheros?/, 'huevos-rancheros'], [/desayuno tipico/, 'desayuno-tipico'],
+    [/coca[\s-]*cola/, 'coca-cola'], [/sprite/, 'sprite'],
+    [/horchata/, 'horchata'], [/cafe|americano/, 'cafe'], [/agua/, 'agua'],
+    [/nacho/, 'nachos'], [/hot[\s-]*dog|perro caliente/, 'hotdog'],
+    [/ensalada/, 'ensalada'], [/papa/, 'papas'],
+    [/hamburguesa|burger/, 'hamburguesa'], [/pizza/, 'pizza'],
+    [/pollo|alita/, 'pollo'], [/naranja/, 'jugo-naranja'],
+    [/limonada|limon/, 'limonada'], [/pastel|tarta|torta|chocolate|postre/, 'pastel-chocolate'],
+    [/jugo|zumo|bebida|refresco|soda|gaseosa/, 'limonada'],
+    [/entrada|vegetal|verdura/, 'ensalada'], [/plato|comida/, 'pollo']
 ]
 const COLORES = ['green', 'gold', 'orange', 'red']
 
@@ -440,10 +451,11 @@ function normalizar(texto) {
     return String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 }
 
-function iconoPara(nombre, categoria) {
-    const texto = normalizar(`${nombre} ${categoria}`)
-    const hallado = ICONOS.find(([regex]) => regex.test(texto))
-    return hallado ? hallado[1] : '🍽️'
+function imagenPara(nombre, categoria) {
+    const porNombre = IMAGENES.find(([regex]) => regex.test(normalizar(nombre)))
+    const porCategoria = IMAGENES.find(([regex]) => regex.test(normalizar(categoria)))
+    const archivo = (porNombre || porCategoria || [null, 'pollo'])[1]
+    return require(`@/assets/producto-${archivo}.jpg`)
 }
 
 export default {
@@ -580,7 +592,7 @@ export default {
                             descripcion: p.descripcion || '',
                             precio: Number(p.precio),
                             categoria,
-                            icono: iconoPara(p.nombre, categoria),
+                            imagen: imagenPara(p.nombre, categoria),
                             color: COLORES[indice % COLORES.length]
                         }
                     })
@@ -1336,6 +1348,8 @@ export default {
 }
 
 .orders .product-card__image {
+    position: relative;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1361,12 +1375,21 @@ export default {
     background: #f5e6e1;
 }
 
-.orders .product-card__emoji {
-    font-size: 40px;
-    line-height: 1.2;
+.orders .product-card__photo {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    object-position: center;
 }
 
 .orders .product-card__category {
+    position: relative;
+    z-index: 1;
     padding: 5px 9px;
     border-radius: 15px;
     background: #ffffffcc;
@@ -1906,10 +1929,6 @@ export default {
         min-height: 100%;
         padding: 9px;
         gap: 7px;
-    }
-
-    .orders .product-card__emoji {
-        font-size: 33px;
     }
 
     .orders .product-card__category {
