@@ -9,7 +9,7 @@
         <section class="login__panel">
             <form class="form" novalidate @submit.prevent="onSubmit">
                 <h1 class="form__title">Crear cuenta</h1>
-                <p class="form__subtitle">Regístrate como personal del restaurante</p>
+                <p class="form__subtitle">Registro de clientes para la aplicación FoodOrder</p>
 
                 <template v-if="done">
                     <p class="form__success" role="status">{{ done }}</p>
@@ -40,7 +40,7 @@
                         <input id="clave2" v-model="form.clave_confirmation" type="password"
                             placeholder="Repite la contraseña" autocomplete="new-password" />
                         <small class="form__hint">
-                            Tu cuenta quedará pendiente hasta que un administrador la active.
+                            Las cuentas de empleados las crea un administrador desde Gestión de Personal.
                         </small>
                     </div>
 
@@ -105,7 +105,7 @@ export default {
                     username: this.form.username.trim(),
                     correo: this.form.correo.trim()
                 })
-                this.done = data.message || 'Cuenta creada. Un administrador debe activarla.'
+                this.done = data.message || 'Cuenta creada. Puedes ingresar desde la aplicación de clientes.'
             } catch (e) {
                 this.error = errorMessage(e, 'No se pudo crear la cuenta.')
             } finally {

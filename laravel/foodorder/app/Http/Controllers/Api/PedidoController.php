@@ -66,16 +66,8 @@ class PedidoController extends Controller
         $usuario->rol &&
         strcasecmp($usuario->rol->nombre, 'Cliente') === 0
     ) {
-        $cliente = \App\Models\Cliente::where(
-            'usuario_id',
-            $usuario->id
-        )->first();
-
-        if (!$cliente) {
-            return response()->json([], 200);
-        }
-
-        $query->where('cliente_id', $cliente->id);
+        // Los clientes solo ven pedidos creados desde su propia cuenta.
+        $query->where('usuario_id', $usuario->id);
     }
 
     if ($request->filled('estado')) {

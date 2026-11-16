@@ -114,8 +114,13 @@ class AuthController extends Controller
             return $usuario;
         });
 
+        // Ionic conserva la sesión tras registrarse; entregar el mismo contrato que /auth/login.
+        $token = $usuario->createToken('foodorder')->plainTextToken;
+
         return response()->json([
             'message' => 'Cuenta creada exitosamente. Ya puedes iniciar sesión.',
+            'token' => $token,
+            'usuario' => $this->respuestaUsuario($usuario),
             'data' => $this->respuestaUsuario($usuario),
         ], 201);
     }

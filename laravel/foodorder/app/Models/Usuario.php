@@ -45,4 +45,10 @@ class Usuario extends Authenticatable
 {
     return $this->hasOne(Cliente::class, 'usuario_id');
 }
+
+    // Historial de pedidos creados por este usuario.
+    public function pedidos()
+    {
+        return $this->hasMany(Pedido::class, 'usuario_id');
+    }
 }

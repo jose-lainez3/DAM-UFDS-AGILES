@@ -42,8 +42,7 @@
                 </form>
 
                 <p class="register-link">
-                    ¿No tienes cuenta?
-                    <router-link to="/register">Regístrate aquí</router-link>
+                    Si necesitas acceso de personal, solicita tu usuario al administrador.
                 </p>
             </div>
         </div>
