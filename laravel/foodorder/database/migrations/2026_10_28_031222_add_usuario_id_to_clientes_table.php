@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -8,19 +9,20 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('clientes', function (Blueprint $table) {
-            $table->foreignId('usuario_id')
-                ->nullable()
-                ->unique()
-                ->constrained('usuarios')
-                ->nullOnDelete();
-        });
+        if (!Schema::hasColumn('clientes', 'usuario_id')) {
+            Schema::table('clientes', function (Blueprint $table) {
+                $table->foreignId('usuario_id')
+                    ->nullable()
+                    ->unique()
+                    ->constrained('usuarios')
+                    ->nullOnDelete();
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('clientes', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('usuario_id');
-        });
+        // Se conserva la columna para evitar borrar
+        // relaciones que ya existían anteriormente.
     }
 };
