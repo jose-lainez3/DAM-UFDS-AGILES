@@ -1,0 +1,78 @@
+name: Compilar APK Android - FoodOrder
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "Ionic/FoodOrder/**"
+      - ".github/workflows/android-apk.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  compilar-apk:
+    name: Compilar APK de prueba
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    defaults:
+      run:
+        working-directory: Ionic/FoodOrder
+
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: Ionic/FoodOrder/package-lock.json
+
+      - name: Configurar Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar Android SDK 36
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Instalar dependencias del proyecto
+        run: npm ci
+
+      - name: Instalar plataforma Capacitor Android 8.5.3
+        # El proyecto todavía no contiene @capacitor/android en package.json.
+        # No cambiamos package.json ni package-lock.json durante la compilación.
+        run: npm install --no-save --package-lock=false @capacitor/android@8.5.3
+
+      - name: Compilar Ionic Angular en producción
+        run: npm run build -- --configuration production
+
+      - name: Generar y sincronizar el proyecto Android
+        run: |
+          if [ ! -f android/gradlew ]; then
+            npx cap add android
+          fi
+          npx cap sync android
+
+      - name: Construir APK de depuración
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew --no-daemon assembleDebug
+
+      - name: Publicar APK descargable
+        uses: actions/upload-artifact@v4
+        with:
+          name: FoodOrder-APK-Debug
+          path: Ionic/FoodOrder/android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
