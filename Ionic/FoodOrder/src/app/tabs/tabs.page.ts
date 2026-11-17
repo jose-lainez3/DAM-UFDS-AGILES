@@ -1,5 +1,6 @@
 
 import { Component, inject } from '@angular/core';
+import { Location } from '@angular/common';
 
 import {
   IonBadge,
@@ -40,6 +41,12 @@ import { CartService } from '../core/cart.service';
 export class TabsPage {
 
   cart = inject(CartService);
+  private readonly location = inject(Location);
+
+  // Respeta / en Android y el prefijo /DAM-UFDS-AGILES/ en GitHub Pages.
+  tabHref(tab: 'menu' | 'carrito' | 'pedidos' | 'perfil'): string {
+    return this.location.prepareExternalUrl(`/tabs/${tab}`);
+  }
 
   constructor() {
     addIcons({

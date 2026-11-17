@@ -12,6 +12,7 @@
 | [README Laravel](laravel/foodorder/README.md) | Configuración del backend y endpoints |
 | [README Vue](vue/foodorder/README.md) | Instalación y publicación del panel administrativo |
 | [README Ionic/Android](Ionic/FoodOrder/README.md) | Cliente móvil, API, APK y actualizaciones |
+| [PWA para iPhone](Ionic/FoodOrder/PWA_IOS.md) | Instalación desde Safari sin App Store y publicación automática |
 | [Firma Android y OTA](Ionic/FoodOrder/ANDROID_FIRMA_OTA.md) | Firma release, secretos y distribución OTA |
 
 **API de producción configurada en Ionic:** `https://foodorderapi.alwaysdata.net/api`. La publicación de Laravel y Vue se gestiona por separado; solo el APK y la OTA tienen workflows de GitHub Actions en este repositorio.

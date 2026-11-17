@@ -1,0 +1,70 @@
+name: FoodOrder PWA - iPhone y web (GitHub Pages)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'Ionic/FoodOrder/**'
+      - '.github/workflows/foodorder-pwa.yml'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: foodorder-github-pages
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    defaults:
+      run:
+        working-directory: Ionic/FoodOrder
+
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Preparar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: Ionic/FoodOrder/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci --no-audit --no-fund
+
+      - name: Compilar Ionic para GitHub Pages
+        # El sitio de este repositorio vive bajo /DAM-UFDS-AGILES/.
+        run: npm run build -- --configuration production --base-href /DAM-UFDS-AGILES/
+
+      - name: Verificar archivos PWA y rutas
+        run: |
+          test -f www/index.html
+          test -f www/manifest.webmanifest
+          test -f www/sw.js
+          test -f www/assets/foodorder-icon.svg
+          test -f www/assets/logo.png
+          grep -q 'href="/DAM-UFDS-AGILES/"' www/index.html
+          cp www/index.html www/404.html
+          touch www/.nojekyll
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Cargar sitio web
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: Ionic/FoodOrder/www
+
+      - name: Publicar FoodOrder PWA
+        id: deployment
+        uses: actions/deploy-pages@v4

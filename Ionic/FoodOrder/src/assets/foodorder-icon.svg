@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="FoodOrder">
+  <rect width="512" height="512" rx="114" fill="#10372f"/>
+  <circle cx="256" cy="222" r="138" fill="#f5b332"/>
+  <circle cx="256" cy="222" r="108" fill="#f7f8f6"/>
+  <circle cx="256" cy="222" r="91" fill="#10372f"/>
+  <path d="M211 176v87c0 28-12 44-31 44v-131m13 0v52m-26-52v52m96-52c47 9 75 45 75 93 0 20-8 31-21 31h-18v43h-15V176" fill="none" stroke="#f5b332" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="256" y="418" fill="#ffffff" font-family="Arial,sans-serif" font-size="59" text-anchor="middle" font-weight="700" letter-spacing="1">FoodOrder</text>
+</svg>

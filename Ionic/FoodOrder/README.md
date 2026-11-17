@@ -72,3 +72,7 @@ La app comprueba el manifiesto `latest.json` de la rama pública `foodorder-ota`
 - [Funcionamiento en línea](../../docs/FUNCIONAMIENTO_ONLINE.md)
 - [Arquitectura y cambios](../../docs/ARQUITECTURA_Y_CAMBIOS.md)
 - [Firma y actualizaciones OTA en detalle](ANDROID_FIRMA_OTA.md)
+
+## Instalación en iPhone sin App Store
+
+FoodOrder puede publicarse como PWA instalable desde Safari. La compilación web se automatiza con GitHub Actions y requiere activar GitHub Pages una sola vez. Consulta la [guía de iPhone y PWA](PWA_IOS.md).

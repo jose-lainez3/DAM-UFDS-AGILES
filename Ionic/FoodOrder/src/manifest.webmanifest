@@ -1,0 +1,21 @@
+{
+  "name": "FoodOrder — Pedidos",
+  "short_name": "FoodOrder",
+  "description": "Explora el menú, prepara tu carrito y consulta tus pedidos.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f8f6",
+  "theme_color": "#10372f",
+  "lang": "es",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/foodorder-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

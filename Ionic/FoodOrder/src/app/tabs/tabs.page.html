@@ -4,25 +4,25 @@
   <ion-tab-bar slot="bottom" class="foodorder-tabs">
 
     <!-- MENÚ -->
-    <ion-tab-button tab="menu" href="/tabs/menu">
+    <ion-tab-button tab="menu" [href]="tabHref('menu')">
       <ion-icon name="restaurant-outline"></ion-icon>
       <ion-label>Menú</ion-label>
     </ion-tab-button>
 
     <!-- CARRITO -->
-    <ion-tab-button tab="carrito" href="/tabs/carrito">
+    <ion-tab-button tab="carrito" [href]="tabHref('carrito')">
       <ion-icon name="cart-outline"></ion-icon>
       <ion-label>Carrito</ion-label>
     </ion-tab-button>
 
     <!-- MIS PEDIDOS -->
-    <ion-tab-button tab="pedidos" href="/tabs/pedidos">
+    <ion-tab-button tab="pedidos" [href]="tabHref('pedidos')">
       <ion-icon name="receipt-outline"></ion-icon>
       <ion-label>Mis pedidos</ion-label>
     </ion-tab-button>
 
     <!-- PERFIL -->
-    <ion-tab-button tab="perfil" href="/tabs/perfil">
+    <ion-tab-button tab="perfil" [href]="tabHref('perfil')">
       <ion-icon name="person-circle-outline"></ion-icon>
       <ion-label>Perfil</ion-label>
     </ion-tab-button>
