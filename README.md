@@ -1,4 +1,26 @@
-# FoodOrder
+# Documentación del sistema FoodOrder
+
+**FoodOrder** integra una API Laravel, un panel Vue para el personal y una aplicación cliente Ionic Angular para navegador/Android.
+
+### Empieza por la guía adecuada
+
+| Guía | Para qué sirve |
+| --- | --- |
+| **[Instalación local paso a paso](docs/INSTALACION_LOCAL.md)** | Configurar Windows/XAMPP, base de datos, Laravel, Vue, Ionic y pruebas |
+| **[Funcionamiento y despliegue en línea](docs/FUNCIONAMIENTO_ONLINE.md)** | Diferencias entre local y servidor, despliegue, API de producción, APK y OTA |
+| **[Arquitectura y cambios realizados](docs/ARQUITECTURA_Y_CAMBIOS.md)** | Explicación del sistema, flujo de pedidos, roles, tecnologías y mejoras |
+| [README Laravel](laravel/foodorder/README.md) | Configuración del backend y endpoints |
+| [README Vue](vue/foodorder/README.md) | Instalación y publicación del panel administrativo |
+| [README Ionic/Android](Ionic/FoodOrder/README.md) | Cliente móvil, API, APK y actualizaciones |
+| [Firma Android y OTA](Ionic/FoodOrder/ANDROID_FIRMA_OTA.md) | Firma release, secretos y distribución OTA |
+
+**API de producción configurada en Ionic:** `https://foodorderapi.alwaysdata.net/api`. La publicación de Laravel y Vue se gestiona por separado; solo el APK y la OTA tienen workflows de GitHub Actions en este repositorio.
+
+**Aviso de seguridad:** los datos del seeder son solo para pruebas locales. No publiques `.env`, contraseñas ni claves de firma.
+
+---
+
+## Guía rápida original
 
 Guía para instalar y usar el sistema.
 
@@ -76,7 +98,7 @@ APP_URL=http://127.0.0.1:8000
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=foodorders
+DB_DATABASE=foodorder
 DB_USERNAME=root
 DB_PASSWORD=
 

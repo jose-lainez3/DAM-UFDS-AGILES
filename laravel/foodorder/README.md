@@ -1,59 +1,85 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# FoodOrder — API Laravel
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Este módulo es el **backend central** del sistema FoodOrder. Expone una API REST que consumen el panel Vue y la app Ionic; es quien consulta y modifica la base MySQL/MariaDB.
 
-## About Laravel
+**Tecnologías:** PHP 8.2 o posterior, Laravel 12, Sanctum 4, Eloquent, migraciones y seeders.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Instalación local
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Para Windows y XAMPP, desde la **raíz del repositorio**:
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+```powershell
+cd .\laravel\foodorder
+composer install
+Copy-Item .env.example .env
+```
 
-## Learning Laravel
+Crea la base:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```sql
+CREATE DATABASE IF NOT EXISTS foodorder
+CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+En `.env` configura las credenciales que correspondan:
 
-## Laravel Sponsors
+```dotenv
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://127.0.0.1:8000
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=foodorder
+DB_USERNAME=root
+DB_PASSWORD=
+TASA_IMPUESTO=0.13
+CORS_ALLOWED_ORIGINS=*
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+`CORS_ALLOWED_ORIGINS=*` es solo para pruebas locales.
 
-### Premium Partners
+```powershell
+php artisan key:generate
+php artisan optimize:clear
+php artisan migrate --seed
+php artisan serve --host=127.0.0.1 --port=8000
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Probar: `http://127.0.0.1:8000/api/productos` o `http://127.0.0.1:8000/api/categorias`. Deben devolver JSON. Estas dos consultas son públicas; pedidos, mesas, personal e inventario requieren token Sanctum.
 
-## Contributing
+Si se utiliza una base existente, respáldala y ejecuta `php artisan migrate` en lugar de reiniciar tablas. **Nunca** ejecutes `migrate:fresh` sobre datos que se quieran conservar.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Estructura y endpoints
 
-## Code of Conduct
+| Ubicación | Función |
+|---|---|
+| `routes/api.php` | Define endpoints y permisos |
+| `app/Http/Controllers/Api` | Lógica de autenticación, pedidos, productos, usuarios, mesas e inventarios |
+| `app/Models` | Entidades Eloquent y sus relaciones |
+| `database/migrations` | Esquema de base de datos |
+| `database/seeders/DatabaseSeeder.php` | Datos y usuarios para demostración |
+| `config/cors.php` | Orígenes permitidos para frontend |
+| `config/foodorder.php` | Impuesto configurable (`TASA_IMPUESTO`) |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Rutas principales:
 
-## Security Vulnerabilities
+- `POST /api/auth/login`, `POST /api/auth/register` (públicas).
+- `GET /api/productos`, `GET /api/categorias` (públicas).
+- `GET /api/auth/me` y `POST /api/auth/logout` (requieren token).
+- `/api/pedidos`, `/api/mesas`, `/api/clientes`, `/api/inventarios` (con autenticación).
+- `/api/usuarios` y gestión de roles (con protección de administrador).
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+La app cliente identifica al usuario desde el token y Laravel limita el acceso a sus propios pedidos. Al crear una orden, el backend valida mesa/productos, registra detalles y calcula el precio, con operaciones de BD en transacción.
 
-## License
+## Usuarios de prueba y seguridad
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+`php artisan migrate --seed` inserta `admin/admin123`, `mesero/mesero123`, `cocinero/cocina123` y `cajero/cajero123` para pruebas **locales**. Estas cuentas y contraseñas **no son seguras para producción**. El registro público genera cuentas de rol Cliente vinculadas con su ficha de cliente.
+
+Para un hosting en línea se requieren `APP_DEBUG=false`, HTTPS, origen CORS limitado, credenciales de BD privadas, copias de seguridad y migraciones planificadas. `APP_KEY` debe conservarse si ya existe una instalación con datos. **No publiques `.env`.**
+
+## Más documentación
+
+- [Instalación local](../../docs/INSTALACION_LOCAL.md)
+- [Funcionamiento y publicación online](../../docs/FUNCIONAMIENTO_ONLINE.md)
+- [Arquitectura y cambios](../../docs/ARQUITECTURA_Y_CAMBIOS.md)
