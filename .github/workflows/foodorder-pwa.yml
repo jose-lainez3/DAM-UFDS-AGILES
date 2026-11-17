@@ -1,4 +1,4 @@
-name: FoodOrder PWA - iPhone y web (GitHub Pages)
+name: FoodOrder PWA - iPhone y escritorio (GitHub Pages)
 
 on:
   workflow_dispatch:
@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'Ionic/FoodOrder/**'
+      - 'vue/foodorder/**'
       - '.github/workflows/foodorder-pwa.yml'
 
 permissions:
@@ -20,13 +21,10 @@ concurrency:
 jobs:
   publicar:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    defaults:
-      run:
-        working-directory: Ionic/FoodOrder
 
     steps:
       - name: Descargar código
@@ -37,34 +35,59 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: Ionic/FoodOrder/package-lock.json
+          cache-dependency-path: |
+            Ionic/FoodOrder/package-lock.json
+            vue/foodorder/package-lock.json
 
-      - name: Instalar dependencias
+      - name: Instalar dependencias del cliente Ionic
+        working-directory: Ionic/FoodOrder
         run: npm ci --no-audit --no-fund
 
-      - name: Compilar Ionic para GitHub Pages
-        # El sitio de este repositorio vive bajo /DAM-UFDS-AGILES/.
+      - name: Compilar PWA móvil de Ionic
+        working-directory: Ionic/FoodOrder
         run: npm run build -- --configuration production --base-href /DAM-UFDS-AGILES/
 
-      - name: Verificar archivos PWA y rutas
+      - name: Instalar dependencias del panel Vue
+        working-directory: vue/foodorder
+        run: npm ci --no-audit --no-fund
+
+      - name: Compilar PWA de escritorio Vue
+        working-directory: vue/foodorder
+        env:
+          VUE_APP_PUBLIC_PATH: /DAM-UFDS-AGILES/admin/
+          VUE_APP_DESKTOP_PWA: 'true'
+          VUE_APP_API_URL: https://foodorderapi.alwaysdata.net/api
+        run: npm run build
+
+      - name: Integrar los dos sitios sin sobreescribir el cliente móvil
         run: |
-          test -f www/index.html
-          test -f www/manifest.webmanifest
-          test -f www/sw.js
-          test -f www/assets/foodorder-icon.svg
-          test -f www/assets/logo.png
-          grep -q 'href="/DAM-UFDS-AGILES/"' www/index.html
-          cp www/index.html www/404.html
-          touch www/.nojekyll
+          mkdir -p Ionic/FoodOrder/www/admin
+          cp -a vue/foodorder/dist/. Ionic/FoodOrder/www/admin/
+
+          test -f Ionic/FoodOrder/www/index.html
+          test -f Ionic/FoodOrder/www/manifest.webmanifest
+          test -f Ionic/FoodOrder/www/sw.js
+          test -f Ionic/FoodOrder/www/admin/index.html
+          test -f Ionic/FoodOrder/www/admin/manifest.webmanifest
+          test -f Ionic/FoodOrder/www/admin/sw.js
+          test -f Ionic/FoodOrder/www/admin/pwa-icon-192.png
+          test -f Ionic/FoodOrder/www/admin/pwa-icon-512.png
+
+          grep -q 'href="/DAM-UFDS-AGILES/"' Ionic/FoodOrder/www/index.html
+          grep -q '/DAM-UFDS-AGILES/admin/' Ionic/FoodOrder/www/admin/index.html
+
+          # Rutas de Ionic usan el 404 de la raíz; Vue usa hash (#/pedidos).
+          cp Ionic/FoodOrder/www/index.html Ionic/FoodOrder/www/404.html
+          touch Ionic/FoodOrder/www/.nojekyll
 
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Cargar sitio web
+      - name: Subir sitios para publicación
         uses: actions/upload-pages-artifact@v4
         with:
           path: Ionic/FoodOrder/www
 
-      - name: Publicar FoodOrder PWA
+      - name: Publicar iPhone y escritorio
         id: deployment
         uses: actions/deploy-pages@v4

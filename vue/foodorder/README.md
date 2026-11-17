@@ -42,7 +42,7 @@ VUE_APP_API_URL=https://foodorderapi.alwaysdata.net/api
 
 `src/services/api.js` también tiene esta API como valor predeterminado si la variable no está definida. Vue Router usa `createWebHistory`; configura el servidor para devolver `index.html` cuando se soliciten rutas como `/pedidos` o `/cocina`.
 
-**Atención:** los workflows de GitHub de este repositorio construyen Android e implementan OTA; **no** publican automáticamente este panel Vue.
+**Publicación adicional:** el workflow `.github/workflows/foodorder-pwa.yml` ahora publica también este panel como **PWA de escritorio en GitHub Pages**, en `/DAM-UFDS-AGILES/admin/`. Esto no reemplaza ni publica automáticamente una instalación de Vue en Vercel u otro hosting. Consulta [PWA de escritorio](PWA_ESCRITORIO.md).
 
 ## Organización
 
@@ -59,3 +59,7 @@ El panel está destinado a personal autorizado; los clientes utilizan principalm
 - [Instalación local completa](../../docs/INSTALACION_LOCAL.md)
 - [Despliegue y funcionamiento online](../../docs/FUNCIONAMIENTO_ONLINE.md)
 - [Arquitectura y cambios](../../docs/ARQUITECTURA_Y_CAMBIOS.md)
+
+## Instalación como aplicación de escritorio
+
+En Chrome o Edge puedes instalar FoodOrder Admin como PWA y abrirlo en una ventana independiente. No necesita .exe ni Microsoft Store. Guía completa: [PWA de escritorio](PWA_ESCRITORIO.md).

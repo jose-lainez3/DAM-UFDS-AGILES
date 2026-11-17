@@ -61,3 +61,7 @@ El APK Android sigue teniendo su propia firma y su propio sistema **OTA**; estos
 - [ ] Actualiza el frontend en GitHub y comprueba que se vea en la PWA instalada.
 
 [Volver al README de Ionic](README.md) · [Despliegue online](../../docs/FUNCIONAMIENTO_ONLINE.md)
+
+## Convivencia con el panel de escritorio
+
+El workflow Pages también publica el panel Vue como una segunda PWA bajo `/DAM-UFDS-AGILES/admin/`. El cliente Ionic para iPhone permanece en `/DAM-UFDS-AGILES/`; ambos conservan manifiestos y ámbitos de service worker propios. [Guía del panel de escritorio](../../vue/foodorder/PWA_ESCRITORIO.md).

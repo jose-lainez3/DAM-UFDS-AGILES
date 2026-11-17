@@ -2,6 +2,8 @@
 const CACHE_NAME = 'foodorder-pwa-shell-v1';
 const APP_ROOT = new URL('./', self.registration.scope).toString();
 const APP_ORIGIN = new URL(APP_ROOT).origin;
+// El panel de escritorio dispone de su propio Service Worker con scope /admin/.
+const ADMIN_ROOT = new URL('admin/', APP_ROOT).toString();
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -27,7 +29,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
-  if (request.method !== 'GET' || url.origin !== APP_ORIGIN || !url.href.startsWith(APP_ROOT)) return;
+  if (request.method !== 'GET' || url.origin !== APP_ORIGIN ||
+      !url.href.startsWith(APP_ROOT) || url.href.startsWith(ADMIN_ROOT)) return;
 
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);

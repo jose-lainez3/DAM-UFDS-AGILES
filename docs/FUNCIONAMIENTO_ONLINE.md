@@ -72,7 +72,7 @@ npm run build
 
 Publica el directorio generado `vue/foodorder/dist` en un hosting web estático. Como Vue Router utiliza `createWebHistory`, configura una regla de **fallback a `index.html`** para que recargar `/pedidos` u otra ruta no produzca 404.
 
-**No se encontró en el repositorio un workflow de despliegue automático para Laravel ni para Vue.** Actualizar sus archivos en GitHub no modifica por sí solo el código publicado en sus hosting.
+**Actualización:** GitHub Pages ahora publica una PWA de escritorio del panel Vue en `/DAM-UFDS-AGILES/admin/`, mediante `.github/workflows/foodorder-pwa.yml`. Ese workflow incluye también el cliente Ionic para iPhone. **No** despliega automáticamente la API Laravel ni una instalación de Vue en Vercel u otro hosting; esos despliegues se gestionan por separado.
 
 ## 4. Publicar y actualizar el APK de Android
 
@@ -129,3 +129,7 @@ Consulta [Ionic: firma y OTA](../Ionic/FoodOrder/ANDROID_FIRMA_OTA.md).
 - [ ] No se publicaron `.env`, tokens ni claves privadas.
 
 Para montar todo desde cero: [Instalación local](INSTALACION_LOCAL.md).
+
+## Panel de escritorio instalable
+
+El panel Vue se publica como **PWA de escritorio en GitHub Pages**. En Chrome o Edge el usuario puede instalarlo desde el menú del navegador, abrirlo en una ventana independiente y anclarlo a la barra de tareas. En esa compilación se usa Vue Router con rutas `#` para evitar 404 y la API AlwaysData por HTTPS. Instrucciones: [PWA de escritorio](../vue/foodorder/PWA_ESCRITORIO.md).

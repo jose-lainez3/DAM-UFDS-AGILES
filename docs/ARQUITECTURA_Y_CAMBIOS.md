@@ -65,7 +65,9 @@ La prueba OTA se hizo mostrando temporalmente un aviso en el menú, comprobándo
 | Cambiar API del APK release | `src/environments/environment.prod.ts` | Generar nueva versión de producción |
 | Modificar la interfaz Ionic | `Ionic/FoodOrder/src/app` | Commit/push y nueva OTA |
 | Cambiar Android nativo | Configuración y plugins de Capacitor | Nuevo APK firmado; compatibilidad del canal OTA |
-| Cambiar Laravel/Vue online | Código de cada módulo + hosting | **No hay** despliegue automático de estos módulos en el repositorio |
+| Cambiar Laravel online | Código de Laravel + hosting | No hay despliegue automático del backend en GitHub Pages |
+| Cambiar Vue en la PWA de escritorio | `vue/foodorder/**` | GitHub Actions publica en Pages bajo `/admin/` |
+| Cambiar Vue en otro hosting | Código Vue + hosting | Requiere despliegue propio del proveedor |
 
 **Seguridad:** el seeder incluye usuarios de prueba (`admin`, `mesero`, `cocinero`, `cajero`) con claves conocidas; no son adecuados para una instalación pública. Guardar credenciales y claves solo en gestores de secretos o en el servidor, fuera de GitHub.
 
@@ -76,3 +78,5 @@ La prueba OTA se hizo mostrando temporalmente un aviso en el menú, comprobándo
 Las funcionalidades descritas reflejan los módulos presentes en el repositorio. La calidad de cada caso de uso debe comprobarse con pruebas antes de una entrega de producción.
 
 **Más información:** [Instalación local](INSTALACION_LOCAL.md) · [En línea](FUNCIONAMIENTO_ONLINE.md) · [Firma y OTA](../Ionic/FoodOrder/ANDROID_FIRMA_OTA.md).
+
+**Aplicación de escritorio:** Vue también dispone de una PWA instalable desde Chrome/Edge. Comparte la API Laravel y se publica en GitHub Pages junto a la PWA móvil, sin sustituir el panel que ya se usa en otro hosting. Véase [PWA escritorio](../vue/foodorder/PWA_ESCRITORIO.md).

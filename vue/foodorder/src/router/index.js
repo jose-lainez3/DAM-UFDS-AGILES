@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router'
 
 import LoginView from '@/views/loginView.vue'
 import PedidosView from '@/views/pedidosView.vue'
@@ -90,7 +90,11 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(process.env.BASE_URL),
+  // GitHub Pages no reescribe rutas SPA: usar # solo en su build PWA.
+  // El panel web original conserva history normal y su diseño.
+  history: process.env.VUE_APP_DESKTOP_PWA === 'true'
+    ? createWebHashHistory(process.env.BASE_URL)
+    : createWebHistory(process.env.BASE_URL),
   routes
 })
 

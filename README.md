@@ -11,6 +11,7 @@
 | **[Arquitectura y cambios realizados](docs/ARQUITECTURA_Y_CAMBIOS.md)** | Explicación del sistema, flujo de pedidos, roles, tecnologías y mejoras |
 | [README Laravel](laravel/foodorder/README.md) | Configuración del backend y endpoints |
 | [README Vue](vue/foodorder/README.md) | Instalación y publicación del panel administrativo |
+| [FoodOrder Admin para escritorio](vue/foodorder/PWA_ESCRITORIO.md) | PWA instalable en Windows, macOS o Linux, mediante Chrome o Edge |
 | [README Ionic/Android](Ionic/FoodOrder/README.md) | Cliente móvil, API, APK y actualizaciones |
 | [PWA para iPhone](Ionic/FoodOrder/PWA_IOS.md) | Instalación desde Safari sin App Store y publicación automática |
 | [Firma Android y OTA](Ionic/FoodOrder/ANDROID_FIRMA_OTA.md) | Firma release, secretos y distribución OTA |

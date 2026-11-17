@@ -32,8 +32,11 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401 && !esAuth) {
       clearSession()
       const base = process.env.BASE_URL || '/'
-      if (window.location.pathname !== base) {
-        window.location.assign(base)
+      // En la PWA de escritorio las rutas usan hash (GitHub Pages).
+      // Redirigir correctamente al login si el token expira.
+      const destino = process.env.VUE_APP_DESKTOP_PWA === 'true' ? `${base}#/` : base
+      if (`${window.location.pathname}${window.location.hash}` !== destino) {
+        window.location.assign(destino)
       }
     }
     return Promise.reject(error)
