@@ -39,10 +39,10 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - name: Instalar Android SDK 36
-        run: |
-          yes | sdkmanager --licenses > /dev/null || true
-          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Configurar Android SDK 36
+        uses: android-actions/setup-android@v4
+        with:
+          packages: "platform-tools platforms;android-36 build-tools;36.0.0"
 
       - name: Instalar dependencias del proyecto
         run: npm ci
