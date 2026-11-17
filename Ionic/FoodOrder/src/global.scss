@@ -40,6 +40,9 @@
 :root {
   color-scheme: light;
 
+  /* Safe area real provista por Capacitor 8 en Android 15/16. */
+  --ion-safe-area-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+
   /* Identidad FoodOrder */
   --food-primary: #10372f;
   --food-primary-light: #1b4a42;
@@ -539,9 +542,10 @@ ion-tab-bar {
   border-top: 1px solid var(--food-border);
   border-bottom: none;
 
-  height: 66px;
+  min-height: 66px;
+  height: auto;
 
-  padding-bottom: env(safe-area-inset-bottom);
+  /* El componente tabs aplica el inset y evita superposición. */
 }
 
 ion-tab-button {

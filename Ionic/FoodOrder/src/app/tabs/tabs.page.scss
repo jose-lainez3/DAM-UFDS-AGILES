@@ -24,9 +24,11 @@
 
   border-top: 1px solid var(--food-border);
 
-  height: 70px;
+  height: auto;
+  min-height: 70px;
 
-  padding: 4px 6px;
+  /* Espacio real para la botonera Android y gesto inferior en iOS. */
+  padding: 4px 6px calc(6px + var(--ion-safe-area-bottom, 0px));
 
   box-shadow: none;
 }
@@ -151,8 +153,8 @@ ion-tab-button:active ion-icon {
 @media (max-width: 380px) {
 
   .foodorder-tabs {
-    height: 65px;
-    padding: 3px 2px;
+    min-height: 65px;
+    padding: 3px 2px calc(5px + var(--ion-safe-area-bottom, 0px));
   }
 
   ion-tab-button ion-icon {

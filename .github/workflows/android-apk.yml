@@ -1,77 +1,127 @@
-name: Compilar APK Android - FoodOrder
+name: FoodOrder Android - APK firmado
 
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
-      - "Ionic/FoodOrder/**"
-      - ".github/workflows/android-apk.yml"
+      - 'Ionic/FoodOrder/**'
+      - '.github/workflows/android-apk.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  compilar-apk:
-    name: Compilar APK de prueba
+  android:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
-
+    timeout-minutes: 55
     defaults:
       run:
         working-directory: Ionic/FoodOrder
 
     steps:
-      - name: Descargar el repositorio
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Configurar Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version: '24'
           cache: npm
           cache-dependency-path: Ionic/FoodOrder/package-lock.json
 
-      - name: Configurar Java 21
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: '21'
 
-      - name: Configurar Android SDK 36
-        uses: android-actions/setup-android@v4
+      - uses: android-actions/setup-android@v4
         with:
-          packages: "platform-tools platforms;android-36 build-tools;36.0.0"
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
 
-      - name: Instalar dependencias del proyecto
-        run: npm ci
+      - name: Instalar dependencias nativas y web
+        run: npm install --no-audit --no-fund
 
-      - name: Instalar plataforma Capacitor Android 8.5.3
-        # El proyecto todavía no contiene @capacitor/android en package.json.
-        # No cambiamos package.json ni package-lock.json durante la compilación.
-        run: npm install --no-save --package-lock=false @capacitor/android@8.5.3
+      - name: Sincronizar package-lock.json en el repositorio
+        working-directory: .
+        run: |
+          if ! git diff --quiet -- Ionic/FoodOrder/package-lock.json; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add Ionic/FoodOrder/package-lock.json
+            git commit -m 'chore(ionic): actualizar lockfile de dependencias Android y OTA'
+            git push origin HEAD:main
+          fi
 
-      - name: Compilar Ionic Angular en producción
+      - name: Definir identificador del bundle web
+        run: |
+          printf "export const OTA_BUILD_SHA = '%s';\nexport const OTA_NATIVE_CHANNEL = 'capacitor8-v1';\n" "$GITHUB_SHA" > src/app/core/ota-build.ts
+
+      - name: Construir Angular de producción
         run: npm run build -- --configuration production
 
-      - name: Generar y sincronizar el proyecto Android
+      - name: Generar Android con Capacitor
         run: |
-          if [ ! -f android/gradlew ]; then
-            npx cap add android
-          fi
+          npx cap add android
           npx cap sync android
-
-      - name: Construir APK de depuración
-        run: |
           chmod +x android/gradlew
+
+      - name: Aumentar versión Android
+        run: |
+          sed -i -E "s/versionCode [0-9]+/versionCode ${GITHUB_RUN_NUMBER}/" android/app/build.gradle
+          sed -i -E "s/versionName \"[^\"]+\"/versionName \"1.0.${GITHUB_RUN_NUMBER}\"/" android/app/build.gradle
+
+      - name: Comprobar si hay secretos de firma
+        id: signing
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [[ -n "$KEYSTORE" && -n "$STORE_PASS" && -n "$ALIAS" && -n "$KEY_PASS" ]]; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'enabled=false' >> "$GITHUB_OUTPUT"
+            echo 'No hay firma release: configurar los cuatro secretos ANDROID_* indicados en la guía.'
+          fi
+
+      - name: Compilar y firmar APK release
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          printf '%s' "$KEYSTORE" | base64 -d > "$RUNNER_TEMP/foodorder-release.jks"
+          cd android
+          ./gradlew --no-daemon assembleRelease \
+            "-Pandroid.injected.signing.store.file=$RUNNER_TEMP/foodorder-release.jks" \
+            "-Pandroid.injected.signing.store.password=$STORE_PASS" \
+            "-Pandroid.injected.signing.key.alias=$ALIAS" \
+            "-Pandroid.injected.signing.key.password=$KEY_PASS"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs app/build/outputs/apk/release/app-release.apk
+          cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/FoodOrder-release-firmado.apk"
+
+      - name: Publicar APK release firmado
+        if: steps.signing.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: FoodOrder-APK-Firmado
+          path: ${{ runner.temp }}/FoodOrder-release-firmado.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Compilar APK debug mientras no existan secretos
+        if: steps.signing.outputs.enabled != 'true'
+        run: |
           cd android
           ./gradlew --no-daemon assembleDebug
 
-      - name: Publicar APK descargable
+      - name: Publicar APK debug
+        if: steps.signing.outputs.enabled != 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: FoodOrder-APK-Debug
+          name: FoodOrder-APK-Debug-Sin-Firma-Estable
           path: Ionic/FoodOrder/android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 14

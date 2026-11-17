@@ -1,0 +1,86 @@
+name: FoodOrder - publicar actualizaciones OTA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'Ionic/FoodOrder/**'
+      - '.github/workflows/foodorder-ota.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: foodorder-ota
+  cancel-in-progress: false
+
+jobs:
+  ota:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: Ionic/FoodOrder
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: Ionic/FoodOrder/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm install --no-audit --no-fund
+
+      - name: Identificar versión web
+        run: |
+          printf "export const OTA_BUILD_SHA = '%s';\nexport const OTA_NATIVE_CHANNEL = 'capacitor8-v1';\n" "$GITHUB_SHA" > src/app/core/ota-build.ts
+
+      - name: Compilar y verificar bundle web
+        run: |
+          npm run build -- --configuration production
+          test -f www/index.html
+
+      - name: Crear ZIP OTA y manifiesto
+        run: |
+          cd www
+          zip -qr "$RUNNER_TEMP/foodorder-web.zip" .
+          cd ..
+          export OTA_HASH="$(sha256sum "$RUNNER_TEMP/foodorder-web.zip" | cut -d' ' -f1)"
+          python3 - <<'PY'
+          import json, os, pathlib
+          sha = os.environ['GITHUB_SHA']
+          data = {
+            'version': '1.0.' + os.environ['GITHUB_RUN_NUMBER'],
+            'sha': sha,
+            'channel': 'capacitor8-v1',
+            'url': f'https://raw.githubusercontent.com/jose-lainez3/DAM-UFDS-AGILES/foodorder-ota/bundles/{sha}.zip',
+            'sha256': os.environ['OTA_HASH'],
+          }
+          pathlib.Path(os.environ['RUNNER_TEMP'], 'latest.json').write_text(json.dumps(data, indent=2) + '\n')
+          PY
+
+      - name: Publicar en rama foodorder-ota
+        working-directory: .
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git restore -- Ionic/FoodOrder/package-lock.json || true
+          if git ls-remote --exit-code --heads origin foodorder-ota >/dev/null; then
+            git fetch origin foodorder-ota
+            git switch -C foodorder-ota origin/foodorder-ota
+          else
+            git switch --orphan foodorder-ota
+            git rm -rf --cached -q . || true
+          fi
+          mkdir -p bundles
+          cp "$RUNNER_TEMP/foodorder-web.zip" "bundles/${GITHUB_SHA}.zip"
+          cp "$RUNNER_TEMP/latest.json" latest.json
+          git add latest.json "bundles/${GITHUB_SHA}.zip"
+          git diff --cached --quiet && exit 0
+          git commit -m "ota: paquete web ${GITHUB_SHA}"
+          git push origin HEAD:foodorder-ota

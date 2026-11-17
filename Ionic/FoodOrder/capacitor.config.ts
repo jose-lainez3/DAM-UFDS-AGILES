@@ -1,14 +1,20 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.ionic.starter',
+  appId: 'com.joselainez3.foodorder',
   appName: 'FoodOrder',
   webDir: 'www',
-  server: {
-    // Solo desarrollo: permite que la app Android hable con la API Laravel por HTTP.
-    // En producción usa HTTPS y elimina estas dos líneas.
-    androidScheme: 'http',
-    cleartext: true,
+  plugins: {
+    SystemBars: {
+      // Capacitor 8: respeta los botones de Android incluso con WebView antiguas.
+      insetsHandling: 'css',
+      style: 'LIGHT',
+    },
+    CapacitorUpdater: {
+      // Actualizaciones autohospedadas desde GitHub; sin cuenta Capgo.
+      autoUpdate: 'off',
+      appReadyTimeout: 10000,
+    },
   },
 };
 
