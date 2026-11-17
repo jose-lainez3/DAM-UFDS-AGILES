@@ -100,6 +100,9 @@ const IMAGENES: [RegExp, string][] = [
             <span class="eyebrow">FOODORDER</span>
             <h1>¿Qué se te antoja hoy?</h1>
             <p>Explora nuestro menú y elige tus favoritos.</p>
+            <p class="ota-test-marker" aria-label="Actualización OTA de prueba instalada">
+              ✓ Actualización OTA de prueba
+            </p>
           </div>
 
           <div class="welcome-icon">
@@ -397,6 +400,19 @@ const IMAGENES: [RegExp, string][] = [
 
     .welcome-icon ion-icon {
       font-size: 26px;
+    }
+
+    /* Marcador temporal de prueba OTA (se puede quitar después). */
+    .ota-test-marker {
+      display: inline-block;
+      margin-top: 10px !important;
+      padding: 7px 11px;
+      border-radius: 9px;
+      background: #e6eee9;
+      color: #10372f !important;
+      border: 1px solid #b9d0c3;
+      font-size: 12px !important;
+      font-weight: 700;
     }
 
     /* BUSCADOR */
