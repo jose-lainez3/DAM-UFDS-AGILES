@@ -1,10 +1,14 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   AlertController, IonButton, IonContent, IonHeader, IonItem, IonLabel, IonList, IonNote, IonTitle, IonToolbar,
 } from '@ionic/angular';
 import { AuthService } from '../../core/auth.service';
 import { nombreCompleto } from '../../core/models';
+import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
+import { CapacitorUpdater } from '@capgo/capacitor-updater';
+import { OTA_BUILD_SHA } from '../../core/ota-build';
 
 @Component({
   selector: 'app-perfil',
@@ -37,6 +41,18 @@ import { nombreCompleto } from '../../core/models';
           <ion-button expand="block" fill="outline" (click)="ir('/registro')">Crear cuenta</ion-button>
         </div>
       }
+
+      <section class="version-panel" aria-label="Versión instalada de FoodOrder">
+        <div class="version-panel__header">
+          <div>
+            <span class="version-panel__eyebrow">ACERCA DE LA APLICACIÓN</span>
+            <h2>Versión de FoodOrder</h2>
+          </div>
+          <span class="version-panel__number">{{ versionInstalada() }}</span>
+        </div>
+        <p>{{ origenVersion() }}</p>
+        <small>Revisión: {{ revisionWeb }}</small>
+      </section>
     </ion-content>
   `,
   styles: `
@@ -44,6 +60,51 @@ import { nombreCompleto } from '../../core/models';
     .invitado__logo { display: block; width: 115px; height: 115px; max-width: 100%; object-fit: contain; margin: 0 auto; }
     .invitado p { color: var(--ion-color-medium); margin-bottom: 24px; }
     .invitado ion-button { margin-top: 8px; }
+    .version-panel {
+      max-width: 540px;
+      margin: 24px 16px 28px;
+      padding: 17px 18px;
+      border: 1px solid #e5e9e6;
+      border-radius: 16px;
+      background: #ffffff;
+    }
+    .version-panel__header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .version-panel__eyebrow {
+      color: #64748b;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .version-panel h2 {
+      margin: 6px 0 0;
+      color: #10372f;
+      font-size: 16px;
+      font-weight: 750;
+    }
+    .version-panel__number {
+      display: inline-block;
+      padding: 7px 10px;
+      border-radius: 9px;
+      background: #e6eee9;
+      color: #10372f;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .version-panel p {
+      margin: 12px 0 6px;
+      color: #64748b;
+      font-size: 13px;
+    }
+    .version-panel small {
+      color: #718178;
+      font-size: 11px;
+    }
   `,
 })
 export class PerfilPage {
@@ -51,6 +112,42 @@ export class PerfilPage {
   private alertas = inject(AlertController);
   private router = inject(Router);
   nombre = nombreCompleto;
+
+  readonly versionInstalada = signal('Consultando…');
+  readonly origenVersion = signal('Comprobando actualización');
+  readonly revisionWeb = OTA_BUILD_SHA === 'local' ? 'desarrollo' : OTA_BUILD_SHA.slice(0, 7);
+
+  ionViewWillEnter(): void {
+    void this.consultarVersionInstalada();
+  }
+
+  private async consultarVersionInstalada(): Promise<void> {
+    if (!Capacitor.isNativePlatform()) {
+      this.versionInstalada.set('Web');
+      this.origenVersion.set('Versión ejecutándose en el navegador');
+      return;
+    }
+
+    try {
+      const app = await App.getInfo();
+      this.versionInstalada.set(`v${app.version}`);
+      this.origenVersion.set('Versión incluida en el APK');
+    } catch {
+      this.versionInstalada.set('Sin datos');
+      this.origenVersion.set('No se pudo consultar la versión del APK');
+    }
+
+    try {
+      const estado = await CapacitorUpdater.current();
+      const versionOTA = estado.bundle?.version;
+      if (typeof versionOTA === 'string' && /^\d+\.\d+\.\d+$/.test(versionOTA)) {
+        this.versionInstalada.set(`v${versionOTA}`);
+        this.origenVersion.set('Actualización OTA instalada');
+      }
+    } catch {
+      // Si el actualizador falla, se conserva la versión nativa conocida.
+    }
+  }
 
   ir(ruta: string) {
     this.router.navigate([ruta], { queryParams: { returnUrl: '/tabs/perfil' } });
