@@ -38,18 +38,7 @@ jobs:
           packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
 
       - name: Instalar dependencias nativas y web
-        run: npm install --no-audit --no-fund
-
-      - name: Sincronizar package-lock.json en el repositorio
-        working-directory: .
-        run: |
-          if ! git diff --quiet -- Ionic/FoodOrder/package-lock.json; then
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add Ionic/FoodOrder/package-lock.json
-            git commit -m 'chore(ionic): actualizar lockfile de dependencias Android y OTA'
-            git push origin HEAD:main
-          fi
+        run: npm ci --no-audit --no-fund
 
       - name: Definir identificador del bundle web
         run: |
