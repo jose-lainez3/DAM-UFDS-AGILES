@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Capacitor } from '@capacitor/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   IonButton, IonContent, IonInput, IonInputPasswordToggle, IonItem, IonList, IonNote, IonSpinner, IonText,
@@ -12,8 +13,8 @@ import { errorMessage } from '../../core/errors';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, RouterLink, IonContent, IonList, IonItem, IonInput, IonInputPasswordToggle, IonButton, IonText, IonNote, IonSpinner],
   template: `
-    <ion-content class="ion-padding" [fullscreen]="true">
-      <div class="login">
+    <ion-content class="ion-padding" [fullscreen]="true" [class.login-content--native]="esAppNativa">
+      <div class="login" [class.login--native]="esAppNativa">
         <div class="login__brand">
           <div class="login-brand">
   <img
@@ -100,12 +101,104 @@ import { errorMessage } from '../../core/errors';
   color: #64748b;
   font-size: 14px;
 }
+
+/*
+ * Diseño exclusivo del APK (Capacitor Android / iOS).
+ * En el navegador no se aplica ninguna de estas reglas.
+ */
+.login-content--native {
+  --background: #f7f8f6;
+  --padding-top: 0px;
+  --padding-bottom: 0px;
+}
+.login-content--native::part(scroll) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100%;
+}
+.login--native {
+  width: 100%;
+  max-width: 410px;
+  margin: 0 auto;
+  padding: clamp(18px, 4vh, 38px) 6px;
+}
+.login--native .login__brand {
+  margin-bottom: 22px;
+}
+.login--native .login-brand {
+  gap: 7px;
+  margin-bottom: 0;
+}
+.login--native .login-logo {
+  width: 106px;
+  height: 106px;
+  border-radius: 18px;
+}
+.login--native .login-brand h1 {
+  font-size: 30px;
+  line-height: 1.2;
+  letter-spacing: -0.8px;
+}
+.login--native .login-brand p {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.login--native form {
+  margin: 0;
+}
+.login--native .login__list {
+  margin: 0 0 14px;
+  padding: 2px 0;
+  border: 1px solid #e2e9e5;
+  border-radius: 17px;
+  background: #fff;
+  overflow: hidden;
+}
+.login--native .login__list ion-item {
+  --background: #fff;
+  --min-height: 59px;
+  --padding-start: 16px;
+  --inner-padding-end: 12px;
+  --border-color: #e9eeeb;
+  margin: 0;
+}
+.login--native ion-button {
+  --border-radius: 12px;
+  min-height: 47px;
+  margin: 9px 0 0;
+  font-size: 14px;
+  font-weight: 650;
+}
+.login--native .login__error {
+  margin: 4px 0 12px;
+  font-size: 13px;
+}
+@media (max-height: 680px) {
+  .login-content--native::part(scroll) {
+    justify-content: flex-start;
+  }
+  .login--native {
+    padding-top: 18px;
+    padding-bottom: 18px;
+  }
+  .login--native .login__brand {
+    margin-bottom: 15px;
+  }
+  .login--native .login-logo {
+    width: 84px;
+    height: 84px;
+  }
+}
   `,
 })
 export class LoginPage {
   private auth = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+
+  /** Solo el APK usa la composición centrada: la interfaz web no cambia. */
+  readonly esAppNativa = Capacitor.isNativePlatform();
 
   username = '';
   clave = '';
