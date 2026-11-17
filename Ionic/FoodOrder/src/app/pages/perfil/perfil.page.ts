@@ -115,7 +115,7 @@ export class PerfilPage {
 
   readonly versionInstalada = signal('Consultando…');
   readonly origenVersion = signal('Comprobando actualización');
-  readonly revisionWeb = OTA_BUILD_SHA === 'local' ? 'desarrollo' : OTA_BUILD_SHA.slice(0, 7);
+  readonly revisionWeb = OTA_BUILD_SHA.slice(0, 7);
 
   ionViewWillEnter(): void {
     void this.consultarVersionInstalada();
