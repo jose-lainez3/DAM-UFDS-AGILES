@@ -1,5 +1,22 @@
 # Documentación del sistema FoodOrder
 
+## Aplicaciones y descargas
+
+| Plataforma | Enlace | Instalación / uso |
+| --- | --- | --- |
+| **Android** | **[Descargar APK firmado (última versión)](https://github.com/jose-lainez3/DAM-UFDS-AGILES/releases/latest/download/FoodOrder-release-firmado.apk)** | Descargar el `.apk` y abrirlo en Android. Puede requerir permitir la instalación desde el navegador o gestor de archivos. |
+| **iPhone / iPad** | [FoodOrder Cliente (PWA)](https://jose-lainez3.github.io/DAM-UFDS-AGILES/) | Abrir en Safari → Compartir → Agregar a pantalla de inicio. No requiere App Store. |
+| **Windows / macOS / Linux** | [FoodOrder Admin (PWA escritorio)](https://jose-lainez3.github.io/DAM-UFDS-AGILES/admin/) | Abrir en Chrome o Edge y usar la opción **Instalar aplicación**. No es un archivo `.exe`. |
+| **Navegador** | [FoodOrder Cliente web](https://jose-lainez3.github.io/DAM-UFDS-AGILES/) · [Panel administrativo web](https://jose-lainez3.github.io/DAM-UFDS-AGILES/admin/) | Acceso directo sin instalar. |
+
+**Otras descargas:** [Todas las versiones Android (GitHub Releases)](https://github.com/jose-lainez3/DAM-UFDS-AGILES/releases) · [Compilaciones y registros (Actions)](https://github.com/jose-lainez3/DAM-UFDS-AGILES/actions).
+
+El enlace de Android apunta al APK de la versión más reciente publicada en **Releases**, no a un artefacto ZIP temporal de Actions. El workflow `.github/workflows/android-apk.yml` publica automáticamente una nueva versión cuando finaliza una compilación firmada de `main`. Se necesitan los secretos `ANDROID_*` de firma configurados. Si una compilación falla, permanece disponible la última versión publicada.
+
+Las PWA y el APK usan la API online `https://foodorderapi.alwaysdata.net/api` para cuentas, menú y pedidos. La conexión a internet y una cuenta autorizada siguen siendo necesarias para operar.
+
+---
+
 **FoodOrder** integra una API Laravel, un panel Vue para el personal y una aplicación cliente Ionic Angular para navegador/Android.
 
 ### Empieza por la guía adecuada
@@ -16,7 +33,7 @@
 | [PWA para iPhone](Ionic/FoodOrder/PWA_IOS.md) | Instalación desde Safari sin App Store y publicación automática |
 | [Firma Android y OTA](Ionic/FoodOrder/ANDROID_FIRMA_OTA.md) | Firma release, secretos y distribución OTA |
 
-**API de producción configurada en Ionic:** `https://foodorderapi.alwaysdata.net/api`. La publicación de Laravel y Vue se gestiona por separado; solo el APK y la OTA tienen workflows de GitHub Actions en este repositorio.
+**API de producción configurada en Ionic:** `https://foodorderapi.alwaysdata.net/api`. La publicación de Laravel se gestiona por separado; las PWA de Ionic y Vue, el APK Android y la OTA tienen workflows de GitHub Actions en este repositorio.
 
 **Aviso de seguridad:** los datos del seeder son solo para pruebas locales. No publiques `.env`, contraseñas ni claves de firma.
 

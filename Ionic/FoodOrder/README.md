@@ -4,6 +4,15 @@ Aplicación cliente para consultar el menú, iniciar sesión/registrarse, gestio
 
 **Stack:** Angular 22, Ionic 9 y Capacitor 8. **Identificador Android:** `com.joselainez3.foodorder`.
 
+## Descargas de la aplicación
+
+- **[Descargar APK Android firmado (última versión)](https://github.com/jose-lainez3/DAM-UFDS-AGILES/releases/latest/download/FoodOrder-release-firmado.apk)** — archivo `.apk` para instalar en el teléfono.
+- [Ver todas las versiones Android](https://github.com/jose-lainez3/DAM-UFDS-AGILES/releases).
+- [FoodOrder para iPhone/iPad (PWA)](https://jose-lainez3.github.io/DAM-UFDS-AGILES/) — abrir desde Safari y usar **Agregar a pantalla de inicio**.
+- [FoodOrder Admin para PC (PWA)](https://jose-lainez3.github.io/DAM-UFDS-AGILES/admin/) — instalar desde Chrome o Edge sin `.exe`.
+
+El APK firmado se publica automáticamente en GitHub Releases cuando el workflow de Android en `main` termina correctamente y están configurados los secretos de firma. Las compilaciones de Actions también conservan un ZIP temporal para pruebas.
+
 ## Ejecutar en navegador (desarrollo)
 
 Con MySQL y Laravel local previamente iniciados:
@@ -52,7 +61,7 @@ Ejecuta `npx cap add android` **solo si no existe** el proyecto Android. El buil
 - Secrets necesarios: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` y `ANDROID_KEY_PASSWORD`.
 - La misma clave privada se utiliza para firmar futuras versiones; **no guardes archivos `.jks` ni contraseñas en GitHub**.
 
-Descarga el artefacto desde la pestaña **Actions** de GitHub y extrae el APK del ZIP. Para actualizar una instalación firmada, conserva el identificador de paquete y la misma clave; la versión Android debe aumentar.
+Para usuarios finales, descarga directamente el APK desde **GitHub Releases** usando el enlace de arriba. En **Actions** también permanece un artefacto ZIP temporal para pruebas. Para actualizar una instalación firmada, conserva el identificador de paquete y la misma clave; la versión Android debe aumentar.
 
 ## Actualizaciones OTA
 

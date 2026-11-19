@@ -100,6 +100,20 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Publicar última versión en GitHub Releases
+        if: steps.signing.outputs.enabled == 'true' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="1.0.${GITHUB_RUN_NUMBER}"
+          gh release create "v${VERSION}" \
+            "${RUNNER_TEMP}/FoodOrder-release-firmado.apk#FoodOrder-release-firmado.apk" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --target "${GITHUB_SHA}" \
+            --title "FoodOrder Android v${VERSION}" \
+            --notes "APK Android firmado para FoodOrder. Conectado a la API de producción. Para actualizar, mantén el mismo identificador de paquete y clave de firma." \
+            --latest
+
       - name: Compilar APK debug mientras no existan secretos
         if: steps.signing.outputs.enabled != 'true'
         run: |
