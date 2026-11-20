@@ -46,6 +46,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Ajustes del local que necesita el front (p. ej. el impuesto)
     Route::get('configuracion', fn () => response()->json([
         'tasa_impuesto' => config('foodorder.tasa_impuesto'),
+        // Solo anunciar cobro en línea si Laravel está publicado por HTTPS y tiene credenciales.
+        'pagos_en_linea' => filled(config('services.wompi.client_id'))
+            && filled(config('services.wompi.client_secret'))
+            && parse_url((string) config('app.url'), PHP_URL_SCHEME) === 'https',
     ]));
 
     // Roles: cualquiera autenticado puede listarlos; solo el administrador los modifica
