@@ -86,6 +86,7 @@ export interface PagoPedido {
   monto: string | number;
   es_productivo: boolean | null;
   pagado_en?: string | null;
+  url_pago?: string | null;
 }
 
 export interface Pedido {
