@@ -1,12 +1,9 @@
 name: FoodOrder Android - APK firmado
 
+# Los cambios web (Angular/HTML/CSS) se distribuyen mediante OTA.
+# Crear un APK nuevo SOLO al solicitarlo manualmente por cambios nativos.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'Ionic/FoodOrder/**'
-      - '.github/workflows/android-apk.yml'
 
 permissions:
   contents: write
