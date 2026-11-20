@@ -113,7 +113,10 @@ class DocumentoFiscalController extends Controller
         $esProductivo = $documento->ambiente === 'PRODUCTION';
         $sello = is_string($datos['receivedStamp'] ?? null) ? $datos['receivedStamp'] : null;
 
+        $entornoResponde = strtoupper((string) ($datos['environment'] ?? ''));
+        $entornoValido = $entornoResponde === $documento->ambiente;
         $nuevoEstado = match (true) {
+            !$entornoValido => 'revision',
             $estatus === 'PROCESSED' && $esProductivo && filled($sello) => 'emitido',
             $estatus === 'PROCESSED' && !$esProductivo => 'prueba',
             $estatus === 'DRAFT' && !$esProductivo => 'borrador',

@@ -28,6 +28,17 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // Integración fiscal opcional; no se transmite a Hacienda hasta habilitarla explícitamente.
+    'lumen_dte' => [
+        'enabled' => env('DTE_LUMEN_ENABLED', false),
+        'production' => env('DTE_LUMEN_PRODUCTION', false),
+        'production_confirmed' => env('DTE_LUMEN_PRODUCTION_CONFIRMED', false),
+        'api_key' => env('DTE_LUMEN_API_KEY'),
+        'company_nrc' => env('DTE_LUMEN_COMPANY_NRC'),
+        'establishment' => env('DTE_LUMEN_ESTABLISHMENT'),
+        'point_of_sale' => env('DTE_LUMEN_POINT_OF_SALE'),
+    ],
+
     'wompi' => [
         'client_id' => env('WOMPI_CLIENT_ID'),
         'client_secret' => env('WOMPI_CLIENT_SECRET'),

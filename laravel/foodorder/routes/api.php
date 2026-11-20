@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\DetallePedidoController;
 use App\Http\Controllers\Api\InventarioController;
 use App\Http\Controllers\Api\PagoController;
 use App\Http\Controllers\Api\WompiWebhookController;
+use App\Http\Controllers\Api\DocumentoFiscalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,6 +48,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('configuracion', fn () => response()->json([
         'tasa_impuesto' => config('foodorder.tasa_impuesto'),
         // Solo anunciar cobro en línea si Laravel está publicado por HTTPS y tiene credenciales.
+        'facturacion_electronica' => app(\App\Services\LumenDteService::class)->configurado(),
+        'facturacion_ambiente' => app(\App\Services\LumenDteService::class)->ambiente(),
         'pagos_en_linea' => filled(config('services.wompi.client_id'))
             && filled(config('services.wompi.client_secret'))
             && parse_url((string) config('app.url'), PHP_URL_SCHEME) === 'https',
@@ -74,6 +77,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('clientes', ClienteController::class);
     Route::apiResource('mesas', MesaController::class);
     Route::post('pedidos/{pedido}/pagos/wompi', [PagoController::class, 'crearEnlace']);
+    Route::get('pedidos/{pedido}/factura', [DocumentoFiscalController::class, 'show']);
+    Route::post('pedidos/{pedido}/factura', [DocumentoFiscalController::class, 'store'])
+        ->middleware('role:Administrador');
+    Route::get('pedidos/{pedido}/factura/archivo', [DocumentoFiscalController::class, 'archivo']);
     Route::apiResource('pedidos', PedidoController::class);
     Route::apiResource('detalle-pedidos', DetallePedidoController::class);
     Route::apiResource('inventarios', InventarioController::class);

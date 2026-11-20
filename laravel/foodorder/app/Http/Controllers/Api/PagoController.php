@@ -24,7 +24,7 @@ class PagoController extends Controller
         }
 
         if (!$wompi->configurado()) {
-            return response()->json(['message' => 'Los pagos en línea todavía no están configurados.'], 503);
+            return response()->json(['message' => 'Wompi requiere credenciales y APP_URL HTTPS público en Laravel.'], 503);
         }
 
         try {
