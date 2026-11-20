@@ -58,6 +58,6 @@ export class ApiService {
   }
 
   configuracion() {
-    return this.http.get<{ tasa_impuesto: number }>(`${this.base}/configuracion`);
+    return this.http.get<{ tasa_impuesto: number; pagos_en_linea?: boolean }>(`${this.base}/configuracion`);
   }
 }
