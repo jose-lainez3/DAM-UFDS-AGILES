@@ -1,7 +1,7 @@
 {
-  "version": "1.0.11",
-  "sha": "cd17ff37b6930e6a3790a4fdd394a2cdb8982df9",
+  "version": "1.0.12",
+  "sha": "1683cc1ce505505510e1c5b44a87197c44a04bda",
   "channel": "capacitor8-v1",
-  "url": "https://raw.githubusercontent.com/jose-lainez3/DAM-UFDS-AGILES/foodorder-ota/bundles/cd17ff37b6930e6a3790a4fdd394a2cdb8982df9.zip",
-  "sha256": "f15974d6c964b839c88f5b87aa7dd8990d5a634b93fbb2045763bb73021abe90"
+  "url": "https://raw.githubusercontent.com/jose-lainez3/DAM-UFDS-AGILES/foodorder-ota/bundles/1683cc1ce505505510e1c5b44a87197c44a04bda.zip",
+  "sha256": "da1fd9fa81b3690fc384e0deb6d387009299b7ac41976bbace311ff00b614128"
 }
