@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
-  AlertController, IonButton, IonContent, IonHeader, IonItem, IonLabel, IonList, IonNote, IonTitle, IonToolbar,
+  AlertController, IonButton, IonContent, IonHeader, IonItem, IonLabel, IonList, IonNote, IonTitle, IonToolbar, ToastController,
 } from '@ionic/angular';
 import { AuthService } from '../../core/auth.service';
 import { nombreCompleto } from '../../core/models';
@@ -9,6 +9,7 @@ import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { OTA_BUILD_SHA } from '../../core/ota-build';
+import { FoodOrderUpdateService } from '../../core/foodorder-update.service';
 
 @Component({
   selector: 'app-perfil',
@@ -52,6 +53,12 @@ import { OTA_BUILD_SHA } from '../../core/ota-build';
         </div>
         <p>{{ origenVersion() }}</p>
         <small>Revisión: {{ revisionWeb }}</small>
+        @if (esAndroid()) {
+          <ion-button expand="block" fill="outline" class="ion-margin-top"
+            [disabled]="comprobandoActualizacion()" (click)="comprobarActualizacion()">
+            {{ comprobandoActualizacion() ? 'Buscando actualización…' : 'Buscar actualización de FoodOrder' }}
+          </ion-button>
+        }
       </section>
     </ion-content>
   `,
@@ -111,8 +118,12 @@ export class PerfilPage {
   auth = inject(AuthService);
   private alertas = inject(AlertController);
   private router = inject(Router);
+  private updates = inject(FoodOrderUpdateService);
+  private toast = inject(ToastController);
+  readonly esAndroid = signal(Capacitor.isNativePlatform());
   nombre = nombreCompleto;
 
+  readonly comprobandoActualizacion = signal(false);
   readonly versionInstalada = signal('Consultando…');
   readonly origenVersion = signal('Comprobando actualización');
   readonly revisionWeb = OTA_BUILD_SHA.slice(0, 7);
@@ -146,6 +157,30 @@ export class PerfilPage {
       }
     } catch {
       // Si el actualizador falla, se conserva la versión nativa conocida.
+    }
+  }
+
+  async comprobarActualizacion(): Promise<void> {
+    if (this.comprobandoActualizacion()) return;
+    this.comprobandoActualizacion.set(true);
+
+    try {
+      const resultado = await this.updates.checkForUpdates();
+      if (resultado === 'aplicando') return; // El WebView se reinicia al aplicar el paquete.
+      const mensaje = resultado === 'sin-cambios'
+        ? 'Ya tienes instalada la actualización web más reciente.'
+        : resultado === 'en-progreso'
+          ? 'FoodOrder ya está comprobando actualizaciones.'
+          : 'No se pudo comprobar la actualización. Comprueba tu conexión e inténtalo nuevamente.';
+      const aviso = await this.toast.create({
+        message: mensaje,
+        duration: 3500,
+        color: resultado === 'error' ? 'warning' : 'primary',
+      });
+      await aviso.present();
+      await this.consultarVersionInstalada();
+    } finally {
+      this.comprobandoActualizacion.set(false);
     }
   }
 
