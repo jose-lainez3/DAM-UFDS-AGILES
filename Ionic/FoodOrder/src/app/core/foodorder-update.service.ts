@@ -3,6 +3,8 @@ import { Capacitor } from '@capacitor/core';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { OTA_BUILD_SHA, OTA_NATIVE_CHANNEL } from './ota-build';
 
+export type ResultadoActualizacion = 'sin-cambios' | 'aplicando' | 'error' | 'en-progreso' | 'solo-movil';
+
 interface OtaManifest {
   version: string;
   sha: string;
@@ -38,8 +40,10 @@ export class FoodOrderUpdateService {
     void this.checkForUpdates();
   }
 
-  private async checkForUpdates(): Promise<void> {
-    if (this.checking) return;
+  // También se puede invocar desde Perfil sin reiniciar la aplicación.
+  async checkForUpdates(): Promise<ResultadoActualizacion> {
+    if (!Capacitor.isNativePlatform()) return 'solo-movil';
+    if (this.checking) return 'en-progreso';
     this.checking = true;
     const abort = new AbortController();
     const timeout = setTimeout(() => abort.abort(), 12000);
@@ -49,15 +53,15 @@ export class FoodOrderUpdateService {
         cache: 'no-store',
         signal: abort.signal,
       });
-      if (!response.ok) return;
+      if (!response.ok) return 'error';
 
       const manifest: unknown = await response.json();
-      if (!this.validManifest(manifest)) return;
+      if (!this.validManifest(manifest)) return 'error';
 
       // Evita descargar nuevamente el bundle ya incluido en el APK o el OTA activo.
-      if (manifest.sha === OTA_BUILD_SHA) return;
+      if (manifest.sha === OTA_BUILD_SHA) return 'sin-cambios';
       const current = await CapacitorUpdater.current();
-      if (current.bundle?.version === manifest.version) return;
+      if (current.bundle?.version === manifest.version) return 'sin-cambios';
 
       console.info('[FoodOrder OTA] Nueva versión web:', manifest.version);
       const bundle = await CapacitorUpdater.download({
@@ -68,9 +72,11 @@ export class FoodOrderUpdateService {
       // Solo se reinicia el WebView, no se reinstala Android.
       await CapacitorUpdater.set({ id: bundle.id });
       await CapacitorUpdater.reload();
+      return 'aplicando';
     } catch (error) {
       // La falta de internet o un bundle inválido no debe impedir hacer pedidos.
       console.warn('[FoodOrder OTA] Se conserva la versión instalada:', error);
+      return 'error';
     } finally {
       clearTimeout(timeout);
       this.checking = false;
