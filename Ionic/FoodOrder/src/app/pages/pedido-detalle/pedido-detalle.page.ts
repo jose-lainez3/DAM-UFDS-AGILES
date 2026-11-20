@@ -41,7 +41,7 @@ import { COLOR_ESTADO, ESTADOS, Pedido } from '../../core/models';
           @if (!p.pago && p.estado === 'pagado') {
             <ion-item lines="none">
               <ion-note color="medium">
-                El pedido fue cerrado como pagado en el sistema. No existe una transacción electrónica Wompi asociada.
+                Pago registrado en la administración del restaurante. No hay transacción de Wompi asociada.
               </ion-note>
             </ion-item>
           }
@@ -128,7 +128,7 @@ export class PedidoDetallePage {
     if (pedido.pago?.estado === 'pagado') return 'Pagado con Wompi';
     if (pedido.pago?.estado === 'revision') return 'Cobro en revisión';
     if (pedido.pago?.estado === 'pendiente') return 'Pendiente en Wompi';
-    if (pedido.estado === 'pagado') return 'Cerrado sin Wompi';
+    if (pedido.estado === 'pagado') return 'Pagado en el local';
     if (pedido.estado === 'cancelado') return 'Sin cobro electrónico';
     return 'Pendiente en el local';
   });
@@ -136,7 +136,8 @@ export class PedidoDetallePage {
     const pedido = this.pedido();
     if (pedido?.pago?.estado === 'pagado') return 'success';
     if (pedido?.pago?.estado === 'revision') return 'danger';
-    if (pedido?.estado === 'pagado' || pedido?.estado === 'cancelado') return 'medium';
+    if (pedido?.estado === 'pagado') return 'success';
+    if (pedido?.estado === 'cancelado') return 'medium';
     return 'warning';
   });
   puedeCancelar = computed(() => this.pedido()?.estado === 'pendiente' && !this.pedido()?.pago);
