@@ -1,0 +1,60 @@
+name: FoodOrder pagos - Validaciones
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'Ionic/FoodOrder/**'
+      - 'laravel/foodorder/**'
+      - '.github/workflows/foodorder-payments-check.yml'
+  push:
+    branches: [feature/wompi-foodorder]
+    paths:
+      - 'Ionic/FoodOrder/**'
+      - 'laravel/foodorder/**'
+      - '.github/workflows/foodorder-payments-check.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  ionic-build:
+    name: Compilar Ionic para Android
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Ionic/FoodOrder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: Ionic/FoodOrder/package-lock.json
+      - name: Instalar dependencias
+        run: npm ci --no-audit --no-fund
+      - name: Compilar Ionic produccion
+        run: npm run build -- --configuration production
+
+  laravel-tests:
+    name: Validar API Wompi
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: laravel/foodorder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, curl, sqlite3, pdo_sqlite
+          coverage: none
+      - name: Instalar dependencias
+        run: composer install --no-interaction --no-progress --prefer-dist
+      - name: Revisar sintaxis PHP
+        run: |
+          php -l app/Services/WompiService.php
+          php -l app/Http/Controllers/Api/PagoController.php
+          php -l app/Http/Controllers/Api/WompiWebhookController.php
+      - name: Probar autenticacion webhook
+        run: php artisan test --filter=WompiWebhookTest

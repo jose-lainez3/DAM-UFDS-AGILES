@@ -79,7 +79,18 @@ export interface DetallePedido {
   producto?: Producto;
 }
 
+export interface PagoPedido {
+  id: number;
+  proveedor: string;
+  estado: 'pendiente' | 'pagado' | 'revision';
+  monto: string | number;
+  es_productivo: boolean | null;
+  pagado_en?: string | null;
+  url_pago?: string | null;
+}
+
 export interface Pedido {
+  pago?: PagoPedido | null;
   id: number;
   estado: EstadoPedido;
   precio_total: number;

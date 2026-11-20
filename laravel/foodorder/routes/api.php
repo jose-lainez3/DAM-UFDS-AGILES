@@ -11,12 +11,17 @@ use App\Http\Controllers\Api\ProductoController;
 use App\Http\Controllers\Api\PedidoController;
 use App\Http\Controllers\Api\DetallePedidoController;
 use App\Http\Controllers\Api\InventarioController;
+use App\Http\Controllers\Api\PagoController;
+use App\Http\Controllers\Api\WompiWebhookController;
 
 /*
 |--------------------------------------------------------------------------
 | API de FoodOrder  (prefijo /api)
 |--------------------------------------------------------------------------
 */
+
+// Wompi autentica el webhook mediante HMAC SHA-256, no con Sanctum.
+Route::post('webhooks/wompi', [WompiWebhookController::class, 'handle'])->name('webhooks.wompi');
 
 // ---------- Autenticación (pública) ----------
 Route::prefix('auth')->group(function () {
@@ -41,6 +46,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Ajustes del local que necesita el front (p. ej. el impuesto)
     Route::get('configuracion', fn () => response()->json([
         'tasa_impuesto' => config('foodorder.tasa_impuesto'),
+        // Solo anunciar cobro en línea si Laravel está publicado por HTTPS y tiene credenciales.
+        'pagos_en_linea' => filled(config('services.wompi.client_id'))
+            && filled(config('services.wompi.client_secret'))
+            && parse_url((string) config('app.url'), PHP_URL_SCHEME) === 'https',
     ]));
 
     // Roles: cualquiera autenticado puede listarlos; solo el administrador los modifica
@@ -64,6 +73,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Resto de operaciones que sí requieren estar logueado
     Route::apiResource('clientes', ClienteController::class);
     Route::apiResource('mesas', MesaController::class);
+    Route::post('pedidos/{pedido}/pagos/wompi', [PagoController::class, 'crearEnlace']);
     Route::apiResource('pedidos', PedidoController::class);
     Route::apiResource('detalle-pedidos', DetallePedidoController::class);
     Route::apiResource('inventarios', InventarioController::class);

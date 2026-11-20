@@ -39,6 +39,14 @@
                 </article>
             </section>
 
+            <section class="fo-card" aria-live="polite">
+                <strong>Pago: </strong>
+                <span v-if="pedido.pago?.estado === 'pagado'">Pagado mediante Wompi</span>
+                <span v-else-if="pedido.pago?.estado === 'revision'">Cobro en revisión</span>
+                <span v-else-if="pedido.pago">Pendiente de confirmación Wompi</span>
+                <span v-else>Sin cobro electrónico registrado (pago en local)</span>
+            </section>
+
             <!-- Productos -->
             <section>
                 <h2 class="fo-section-title">Productos del pedido</h2>
@@ -131,11 +139,15 @@ export default {
         },
 
         siguiente() {
-            return this.pedido ? SIGUIENTE[this.pedido.estado] : null
+            if (!this.pedido) return null
+            if (this.pedido.estado === 'entregado' && this.pedido.pago && this.pedido.pago.estado !== 'pagado') {
+                return null
+            }
+            return SIGUIENTE[this.pedido.estado] || null
         },
 
         puedeCancelar() {
-            return this.pedido && ['pendiente', 'preparacion'].includes(this.pedido.estado)
+            return this.pedido && !this.pedido.pago && ['pendiente', 'preparacion'].includes(this.pedido.estado)
         },
 
         subtotal() {
