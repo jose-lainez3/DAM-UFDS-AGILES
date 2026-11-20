@@ -53,6 +53,8 @@ jobs:
           cache-dependency-path: vue/foodorder/package-lock.json
       - name: Instalar dependencias
         run: npm ci --no-audit --no-fund
+      - name: Probar impresión segura de tickets
+        run: npm run test:ticket
       - name: Compilar Vue
         run: npm run build
 
