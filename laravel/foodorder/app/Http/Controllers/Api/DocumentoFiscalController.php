@@ -72,6 +72,9 @@ class DocumentoFiscalController extends Controller
             }
 
             $existente = DocumentoFiscal::where('pedido_id', $pedido->id)->lockForUpdate()->first();
+            if ($existente && $existente->ambiente !== $lumen->ambiente()) {
+                abort(409, 'No se puede conciliar un documento con un ambiente fiscal distinto.');
+            }
             if ($existente) {
                 abort_if(in_array($existente->estado, ['emitido', 'borrador', 'prueba', 'rechazado', 'preparando'], true),
                     409, 'Ya existe un DTE emitido o en proceso. Consulte el estado antes de repetir.');
