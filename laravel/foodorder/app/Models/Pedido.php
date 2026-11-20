@@ -32,6 +32,11 @@ class Pedido extends Model
         'fecha_pedido' => 'datetime',
     ];
 
+    public function documentoFiscal()
+    {
+        return $this->hasOne(DocumentoFiscal::class, 'pedido_id');
+    }
+
     // Cobro electrónico (si fue solicitado por el cliente).
     public function pago()
     {

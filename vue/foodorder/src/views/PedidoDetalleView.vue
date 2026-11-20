@@ -43,8 +43,63 @@
                 <strong>Pago: </strong>
                 <span v-if="pedido.pago?.estado === 'pagado'">Pagado mediante Wompi</span>
                 <span v-else-if="pedido.pago?.estado === 'revision'">Cobro en revisión</span>
+                <span v-else-if="pedido.pago?.estado === 'prueba'">Pago simulado Wompi (sin dinero real)</span>
                 <span v-else-if="pedido.pago">Pendiente de confirmación Wompi</span>
                 <span v-else>Sin cobro electrónico registrado (pago en local)</span>
+            </section>
+
+
+            <section class="fo-card detalle__facturacion">
+                <h2 class="fo-section-title">Facturación electrónica (DTE)</h2>
+                <p v-if="pedido.documento_fiscal">
+                    Estado:
+                    <strong>{{ nombreEstadoFiscal(pedido.documento_fiscal) }}</strong>
+                    <span v-if="pedido.documento_fiscal.ambiente === 'SANDBOX'">
+                        — Ambiente de pruebas, sin validez fiscal
+                    </span>
+                </p>
+                <p v-else class="fo-subtitle">No se ha emitido un DTE para este pedido.</p>
+                <div v-if="pedido.documento_fiscal">
+                    <p v-if="pedido.documento_fiscal.codigo_generacion">Código de generación:
+                        <code>{{ pedido.documento_fiscal.codigo_generacion }}</code>
+                    </p>
+                    <p v-if="pedido.documento_fiscal.sello_recepcion">Sello de recepción:
+                        <code>{{ pedido.documento_fiscal.sello_recepcion }}</code>
+                    </p>
+                    <p v-if="pedido.documento_fiscal.error_resumen" class="fo-alert fo-alert--error">
+                        {{ pedido.documento_fiscal.error_resumen }}
+                    </p>
+                    <div v-if="['emitido', 'prueba', 'borrador'].includes(pedido.documento_fiscal.estado)">
+                        <button type="button" class="fo-btn" :disabled="facturando" @click="prepararArchivos">
+                            {{ facturando ? 'Consultando…' : 'Preparar PDF y JSON' }}
+                        </button>
+                        <a v-if="archivos.pdf" :href="archivos.pdf" class="fo-btn" target="_blank" rel="noopener noreferrer">Descargar PDF</a>
+                        <a v-if="archivos.json" :href="archivos.json" class="fo-btn" target="_blank" rel="noopener noreferrer">Descargar JSON</a>
+                    </div>
+                </div>
+                <template v-if="!pedido.documento_fiscal">
+                    <p v-if="!facturacionDisponible" class="fo-subtitle">
+                        El emisor fiscal todavía no está configurado en Laravel.
+                    </p>
+                    <template v-else-if="puedeFacturar">
+                        <label for="forma-dte">Medio de pago confirmado</label>
+                        <select id="forma-dte" v-model="medioPagoDte" class="detalle__select">
+                            <option value="01">Efectivo</option>
+                            <option value="02">Tarjeta de débito</option>
+                            <option value="03">Tarjeta de crédito</option>
+                            <option value="05">Transferencia / depósito</option>
+                            <option value="08">Dinero electrónico</option>
+                            <option value="99">Otros</option>
+                        </select>
+                        <button type="button" class="fo-btn fo-btn--primary" :disabled="facturando"
+                            @click="emitirFactura">
+                            {{ facturando ? 'Consultando emisor…' : 'Solicitar factura electrónica DTE-01' }}
+                        </button>
+                        <p class="fo-subtitle">Comprueba el pago y el medio seleccionado.
+                            La emisión real solo existe cuando Hacienda acepta el DTE en producción.</p>
+                    </template>
+                    <p v-else class="fo-subtitle">El DTE se podrá emitir después de confirmar el cobro.</p>
+                </template>
             </section>
 
             <!-- Productos -->
@@ -125,6 +180,10 @@ export default {
             loading: true,
             actualizando: false,
             error: '',
+            facturando: false,
+            facturacionDisponible: false,
+            medioPagoDte: '01',
+            archivos: {},
             estados: ESTADOS_PEDIDO
         }
     },
@@ -147,7 +206,14 @@ export default {
         },
 
         puedeCancelar() {
-            return this.pedido && !this.pedido.pago && ['pendiente', 'preparacion'].includes(this.pedido.estado)
+            return this.pedido && !this.pedido.pago && !this.pedido.documento_fiscal && ['pendiente', 'preparacion'].includes(this.pedido.estado)
+        },
+
+        puedeFacturar() {
+            return this.pedido
+                && this.pedido.estado !== 'cancelado'
+                && (this.pedido.estado === 'pagado' || this.pedido.pago?.estado === 'pagado')
+                && (!this.pedido.pago || this.pedido.pago.estado === 'pagado')
         },
 
         subtotal() {
@@ -167,11 +233,63 @@ export default {
 
     created() {
         this.cargar()
+        api.get('/configuracion').then(({ data }) => {
+            this.facturacionDisponible = Boolean(data.facturacion_electronica)
+        }).catch(() => { this.facturacionDisponible = false })
     },
 
     methods: {
         formatMoney,
         formatDateTime,
+        nombreEstadoFiscal(documento) {
+            const nombres = {
+                emitido: 'Emitido y aceptado en producción',
+                prueba: 'Procesado en ambiente de pruebas',
+                borrador: 'Borrador de pruebas (no emitido)',
+                rechazado: 'Rechazado',
+                revision: 'Requiere conciliación',
+                preparando: 'Emisión en proceso'
+            }
+            return nombres[documento?.estado] || documento?.estado || 'Sin DTE'
+        },
+
+        async emitirFactura() {
+            if (!this.puedeFacturar || this.facturando) return
+            const ambiente = 'el entorno configurado en el servidor'
+            if (!window.confirm('¿Confirmas el cobro y la emisión del DTE en ' + ambiente + '? No se debe emitir dos veces la misma venta.')) return
+            this.facturando = true
+            this.error = ''
+            try {
+                const { data } = await api.post(`/pedidos/${this.id}/factura`, { medio_pago: this.medioPagoDte })
+                if (data.documento?.estado === 'revision') {
+                    this.error = 'La transmisión requiere conciliación con el emisor; no emitas otro documento.'
+                }
+                await this.cargar()
+            } catch (e) {
+                this.error = errorMessage(e, 'No se pudo emitir el DTE. Verifica el estado antes de repetir.')
+                await this.cargar()
+            } finally {
+                this.facturando = false
+            }
+        },
+
+        async prepararArchivos() {
+            if (this.facturando) return
+            this.facturando = true
+            this.archivos = {}
+            this.error = ''
+            try {
+                const [pdf, json] = await Promise.all([
+                    api.get(`/pedidos/${this.id}/factura/archivo?formato=pdf`),
+                    api.get(`/pedidos/${this.id}/factura/archivo?formato=json`)
+                ])
+                this.archivos = { pdf: pdf.data.url, json: json.data.url }
+            } catch (e) {
+                this.error = errorMessage(e, 'No se pudieron preparar los archivos del DTE.')
+            } finally {
+                this.facturando = false
+            }
+        },
 
         async cargar() {
             this.loading = true
@@ -248,6 +366,12 @@ export default {
 .detalle__acciones {
     flex-wrap: wrap;
 }
+.detalle__facturacion { margin: 20px 0; padding: 22px; }
+.detalle__facturacion p { margin: 12px 0; overflow-wrap: anywhere; }
+.detalle__facturacion code { overflow-wrap: anywhere; font-size: 0.86rem; }
+.detalle__facturacion .fo-btn { margin: 8px 10px 8px 0; }
+.detalle__select { display: block; max-width: 330px; margin: 10px 0; padding: 10px; border: 1px solid #d2dcd5; border-radius: 8px; background: white; color: #10372f; }
+
 
 @media (max-width: 1000px) {
     .detalle__info {

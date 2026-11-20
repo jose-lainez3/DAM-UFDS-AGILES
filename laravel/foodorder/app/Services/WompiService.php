@@ -14,7 +14,9 @@ class WompiService
 
     public function configurado(): bool
     {
-        return filled(config('services.wompi.client_id')) && filled(config('services.wompi.client_secret'));
+        return filled(config('services.wompi.client_id'))
+            && filled(config('services.wompi.client_secret'))
+            && parse_url((string) config('app.url'), PHP_URL_SCHEME) === 'https';
     }
 
     private function token(): string
@@ -50,7 +52,7 @@ class WompiService
             'esMontoEditable' => false,
             'esCantidadEditable' => false,
             'cantidadPorDefecto' => 1,
-            'urlWebhook' => route('webhooks.wompi'),
+            'urlWebhook' => rtrim((string) config('app.url'), '/') . '/api/webhooks/wompi',
             'notificarTransaccionCliente' => false,
         ];
 

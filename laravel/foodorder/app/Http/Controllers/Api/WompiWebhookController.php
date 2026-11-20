@@ -81,11 +81,14 @@ class WompiWebhookController extends Controller
 
             $pago->pedido()->lockForUpdate()->firstOrFail();
             $pago->update([
-                'estado' => $pago->pedido->estado === 'cancelado' ? 'revision' : 'pagado',
+                'estado' => $pago->pedido->estado === 'cancelado'
+                    ? 'revision'
+                    : ($esProductiva ? 'pagado' : 'prueba'),
                 'transaccion_id' => $idTransaccion,
                 'pagado_en' => now(),
             ]);
 
+            // Sandbox: prueba NO es un cobro real ni permite emitir DTE fiscal.
             // El pago no modifica estado del pedido: cocina sigue su flujo.
             return response()->json(['recibido' => true]);
         });

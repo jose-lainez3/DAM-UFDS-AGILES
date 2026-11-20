@@ -82,14 +82,27 @@ export interface DetallePedido {
 export interface PagoPedido {
   id: number;
   proveedor: string;
-  estado: 'pendiente' | 'pagado' | 'revision';
+  estado: 'pendiente' | 'pagado' | 'revision' | 'prueba';
   monto: string | number;
   es_productivo: boolean | null;
   pagado_en?: string | null;
   url_pago?: string | null;
 }
 
+export interface DocumentoFiscalPedido {
+  id: number;
+  estado: 'preparando' | 'revision' | 'rechazado' | 'borrador' | 'prueba' | 'emitido';
+  ambiente: 'SANDBOX' | 'PRODUCTION';
+  tipo_dte: string;
+  codigo_generacion?: string | null;
+  numero_control?: string | null;
+  sello_recepcion?: string | null;
+  emitido_en?: string | null;
+  error_resumen?: string | null;
+}
+
 export interface Pedido {
+  documento_fiscal?: DocumentoFiscalPedido | null;
   pago?: PagoPedido | null;
   id: number;
   estado: EstadoPedido;

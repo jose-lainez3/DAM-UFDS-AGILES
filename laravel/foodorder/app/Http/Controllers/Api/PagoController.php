@@ -24,50 +24,58 @@ class PagoController extends Controller
         }
 
         if (!$wompi->configurado()) {
-            return response()->json(['message' => 'Los pagos en línea todavía no están configurados.'], 503);
+            return response()->json([
+                'message' => 'Wompi requiere credenciales y APP_URL HTTPS público en Laravel.',
+            ], 503);
+        }
+
+        $pago = DB::transaction(function () use ($pedido, $wompi) {
+            $pedido = Pedido::whereKey($pedido->id)->lockForUpdate()->firstOrFail();
+
+            abort_if(in_array($pedido->estado, Pedido::ESTADOS_FINALES, true), 409, 'El pedido ya está cerrado.');
+            abort_if($pedido->documentoFiscal()->exists(), 409, 'Ya existe una solicitud de facturación para el pedido.');
+            abort_if((float) $pedido->precio_total < 0.01, 422, 'El pedido no tiene un importe válido.');
+
+            $pago = Pago::where('pedido_id', $pedido->id)->lockForUpdate()->first();
+            if ($pago) {
+                if ($pago->estado === 'pendiente' && $pago->url_pago) {
+                    return $pago; // Reutilizar enlace seguro.
+                }
+                abort(409, 'Existe un enlace en proceso, conciliación o pago registrado. No intentes cobrar otra vez.');
+            }
+
+            // Persistir la referencia ANTES de hablar con Wompi. Un timeout puede
+            // dejar un enlace remoto vivo; nunca crearlo por segunda vez a ciegas.
+            return Pago::create([
+                'pedido_id' => $pedido->id,
+                'proveedor' => 'wompi',
+                'referencia' => 'FO-' . $pedido->id . '-' . Str::uuid(),
+                'monto' => $pedido->precio_total,
+                'estado' => 'creando',
+            ]);
+        });
+
+        if ($pago->estado === 'pendiente' && $pago->url_pago) {
+            return response()->json([
+                'estado' => $pago->estado,
+                'url_pago' => $pago->url_pago,
+                'es_productivo' => $pago->es_productivo,
+            ]);
         }
 
         try {
-            $pago = DB::transaction(function () use ($pedido, $wompi) {
-                $pedido = Pedido::whereKey($pedido->id)->lockForUpdate()->firstOrFail();
-
-                abort_if(in_array($pedido->estado, Pedido::ESTADOS_FINALES, true), 409, 'El pedido ya está cerrado.');
-                abort_if((float) $pedido->precio_total < 0.01, 422, 'El pedido no tiene un importe válido.');
-
-                // Nunca abrir nuevos cobros si el pedido ya está liquidado por otro método.
-                $pago = Pago::where('pedido_id', $pedido->id)->lockForUpdate()->first();
-
-                if ($pago) {
-                    abort_if($pago->estado !== 'pendiente', 409, 'Este pago ya fue procesado o requiere revisión.');
-                    if ($pago->url_pago) {
-                        return $pago;
-                    }
-                } else {
-                    $pago = Pago::create([
-                        'pedido_id' => $pedido->id,
-                        'proveedor' => 'wompi',
-                        'referencia' => 'FO-' . $pedido->id . '-' . Str::uuid(),
-                        'monto' => $pedido->precio_total,
-                        'estado' => 'pendiente',
-                    ]);
-                }
-
-                $enlace = $wompi->crearEnlace($pago);
-
-                $pago->update([
-                    'enlace_id' => $enlace['id'],
-                    'url_pago' => $enlace['url'],
-                    'es_productivo' => $enlace['produccion'],
-                ]);
-
-                return $pago;
-            }, 2);
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
-            throw $e;
+            $enlace = $wompi->crearEnlace($pago);
+            $pago->update([
+                'estado' => 'pendiente',
+                'enlace_id' => $enlace['id'],
+                'url_pago' => $enlace['url'],
+                'es_productivo' => $enlace['produccion'],
+            ]);
         } catch (Throwable $e) {
             report($e);
+            $pago->update(['estado' => 'revision']);
             return response()->json([
-                'message' => 'No se pudo generar el enlace. Inténtalo nuevamente.',
+                'message' => 'Wompi no confirmó la creación del enlace. Revisa la referencia en el panel del comercio; no intentes un segundo cobro.',
             ], Response::HTTP_BAD_GATEWAY);
         }
 

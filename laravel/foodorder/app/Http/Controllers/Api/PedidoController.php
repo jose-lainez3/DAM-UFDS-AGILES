@@ -13,7 +13,7 @@ use Illuminate\Validation\ValidationException;
 
 class PedidoController extends Controller
 {
-    private const RELACIONES = ['cliente', 'mesa', 'usuario', 'detalles.producto', 'pago'];
+    private const RELACIONES = ['cliente', 'mesa', 'usuario', 'detalles.producto', 'pago', 'documentoFiscal'];
 
     private function esCliente($usuario): bool
     {
@@ -217,6 +217,15 @@ class PedidoController extends Controller
                 }
             }
 
+            $documento = $pedido->documentoFiscal()->first();
+            if ($documento) {
+                abort_if(array_key_exists('precio_total', $validated)
+                    && round((float) $validated['precio_total'], 2) !== round((float) $pedido->precio_total, 2),
+                    409, 'No se puede cambiar el importe de un pedido asociado a un DTE.');
+                abort_if($estado === 'cancelado', 409,
+                    'El pedido tiene una solicitud fiscal. Requiere procedimiento de anulación DTE.');
+            }
+
             $pago = $pedido->pago()->first();
             if ($pago) {
                 if (array_key_exists('precio_total', $validated)
@@ -270,6 +279,7 @@ class PedidoController extends Controller
         DB::transaction(function () use ($pedido) {
             $pedido = Pedido::whereKey($pedido->id)->lockForUpdate()->firstOrFail();
             abort_if($pedido->pago()->exists(), 409, 'No se puede borrar un pedido con un enlace de pago.');
+            abort_if($pedido->documentoFiscal()->exists(), 409, 'No se puede borrar un pedido con DTE asociado.');
             $mesaId = $pedido->mesa_id;
             if ($mesaId) {
                 Mesa::whereKey($mesaId)->lockForUpdate()->first();
