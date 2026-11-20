@@ -49,6 +49,18 @@
             </section>
 
 
+            <section class="fo-card detalle__impresion">
+                <div class="detalle__impresion-contenido">
+                    <div>
+                        <h2 class="fo-section-title">Ticket del pedido</h2>
+                        <p class="fo-subtitle">Comprobante interno para impresora térmica o papel. No sustituye una factura electrónica.</p>
+                    </div>
+                    <button type="button" class="fo-btn fo-btn--primary" @click="imprimirTicket">
+                        Imprimir ticket
+                    </button>
+                </div>
+            </section>
+
             <section class="fo-card detalle__facturacion">
                 <h2 class="fo-section-title">Facturación electrónica (DTE)</h2>
                 <p v-if="pedido.documento_fiscal">
@@ -73,7 +85,9 @@
                         <button type="button" class="fo-btn" :disabled="facturando" @click="prepararArchivos">
                             {{ facturando ? 'Consultando…' : 'Preparar PDF y JSON' }}
                         </button>
-                        <a v-if="archivos.pdf" :href="archivos.pdf" class="fo-btn" target="_blank" rel="noopener noreferrer">Descargar PDF</a>
+                        <a v-if="archivos.pdf" :href="archivos.pdf" class="fo-btn" target="_blank" rel="noopener noreferrer">
+                            Ver / imprimir factura PDF
+                        </a>
                         <a v-if="archivos.json" :href="archivos.json" class="fo-btn" target="_blank" rel="noopener noreferrer">Descargar JSON</a>
                     </div>
                 </div>
@@ -161,6 +175,7 @@
 import api from '@/services/api'
 import AppLayout from '@/components/AppLayout.vue'
 import { errorMessage, formatDateTime, formatMoney, fullName, ESTADOS_PEDIDO } from '@/services/utils'
+import { generarHtmlTicket } from '@/utils/ticket'
 
 // Siguiente paso del flujo: pendiente → preparación → entregado → pagado
 const SIGUIENTE = {
@@ -241,6 +256,34 @@ export default {
     methods: {
         formatMoney,
         formatDateTime,
+
+        imprimirTicket() {
+            if (!this.pedido) return
+            // Abrir de forma síncrona desde el clic evita bloqueos de ventanas emergentes.
+            const ventana = window.open('', '_blank', 'width=450,height=760')
+            if (!ventana) {
+                this.error = 'El navegador bloqueó la ventana de impresión. Habilita ventanas emergentes para FoodOrder.'
+                return
+            }
+            try {
+                ventana.opener = null
+                ventana.addEventListener('load', () => {
+                    try {
+                        ventana.focus()
+                        ventana.print()
+                    } catch {
+                        // La ventana tiene también un botón de impresión manual.
+                    }
+                }, { once: true })
+                ventana.document.open()
+                ventana.document.write(generarHtmlTicket(this.pedido))
+                ventana.document.close()
+            } catch (e) {
+                ventana.close()
+                this.error = 'No se pudo preparar el ticket: ' + (e.message || 'error desconocido')
+            }
+        },
+
         nombreEstadoFiscal(documento) {
             const nombres = {
                 emitido: 'Emitido y aceptado en producción',
@@ -366,6 +409,10 @@ export default {
 .detalle__acciones {
     flex-wrap: wrap;
 }
+.detalle__impresion { padding: 19px 22px; }
+.detalle__impresion-contenido { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+.detalle__impresion-contenido .fo-section-title { margin-bottom: 6px; }
+.detalle__impresion-contenido .fo-btn { flex-shrink: 0; }
 .detalle__facturacion { margin: 20px 0; padding: 22px; }
 .detalle__facturacion p { margin: 12px 0; overflow-wrap: anywhere; }
 .detalle__facturacion code { overflow-wrap: anywhere; font-size: 0.86rem; }
