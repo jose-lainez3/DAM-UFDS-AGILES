@@ -30,6 +30,12 @@ export class ApiService {
     return this.http.post<{ message: string; data: Pedido }>(`${this.base}/pedidos`, payload);
   }
 
+  iniciarPagoWompi(id: number | string) {
+    return this.http.post<{ estado: string; url_pago: string; es_productivo: boolean }>(
+      `${this.base}/pedidos/${id}/pagos/wompi`, {},
+    );
+  }
+
   cancelarPedido(id: number) {
     return this.http.put<{ message: string; data: Pedido }>(`${this.base}/pedidos/${id}`, { estado: 'cancelado' });
   }
