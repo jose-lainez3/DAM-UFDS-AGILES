@@ -34,6 +34,7 @@ class PagoController extends Controller
                 abort_if(in_array($pedido->estado, Pedido::ESTADOS_FINALES, true), 409, 'El pedido ya está cerrado.');
                 abort_if((float) $pedido->precio_total < 0.01, 422, 'El pedido no tiene un importe válido.');
 
+                // Nunca abrir nuevos cobros si el pedido ya está liquidado por otro método.
                 $pago = Pago::where('pedido_id', $pedido->id)->lockForUpdate()->first();
 
                 if ($pago) {
