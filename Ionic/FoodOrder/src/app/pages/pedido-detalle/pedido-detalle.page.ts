@@ -34,10 +34,17 @@ import { COLOR_ESTADO, ESTADOS, Pedido } from '../../core/models';
           </ion-item>
           <ion-item>
             <ion-label>Pago</ion-label>
-            <ion-badge slot="end" [color]="p.pago?.estado === 'pagado' ? 'success' : p.pago?.estado === 'revision' ? 'danger' : 'warning'">
-              {{ p.pago?.estado === 'pagado' ? 'Pagado en línea' : p.pago?.estado === 'revision' ? 'Requiere revisión' : p.pago ? 'Pendiente en Wompi' : 'Pendiente en el local' }}
+            <ion-badge slot="end" [color]="colorPago()">
+              {{ etiquetaPago() }}
             </ion-badge>
           </ion-item>
+          @if (!p.pago && p.estado === 'pagado') {
+            <ion-item lines="none">
+              <ion-note color="medium">
+                El pedido fue cerrado como pagado en el sistema. No existe una transacción electrónica Wompi asociada.
+              </ion-note>
+            </ion-item>
+          }
           <ion-item>
             <ion-label>Fecha</ion-label>
             <ion-note slot="end">{{ p.fecha_pedido ?? p.created_at | date: 'dd/MM HH:mm' }}</ion-note>
@@ -115,6 +122,23 @@ export class PedidoDetallePage {
 
   etiqueta = computed(() => (this.pedido() ? ESTADOS[this.pedido()!.estado] : ''));
   color = computed(() => (this.pedido() ? COLOR_ESTADO[this.pedido()!.estado] : 'medium'));
+  etiquetaPago = computed(() => {
+    const pedido = this.pedido();
+    if (!pedido) return '';
+    if (pedido.pago?.estado === 'pagado') return 'Pagado con Wompi';
+    if (pedido.pago?.estado === 'revision') return 'Cobro en revisión';
+    if (pedido.pago?.estado === 'pendiente') return 'Pendiente en Wompi';
+    if (pedido.estado === 'pagado') return 'Cerrado sin Wompi';
+    if (pedido.estado === 'cancelado') return 'Sin cobro electrónico';
+    return 'Pendiente en el local';
+  });
+  colorPago = computed(() => {
+    const pedido = this.pedido();
+    if (pedido?.pago?.estado === 'pagado') return 'success';
+    if (pedido?.pago?.estado === 'revision') return 'danger';
+    if (pedido?.estado === 'pagado' || pedido?.estado === 'cancelado') return 'medium';
+    return 'warning';
+  });
   puedeCancelar = computed(() => this.pedido()?.estado === 'pendiente' && !this.pedido()?.pago);
   pagoPendiente = computed(() => this.pedido()?.pago?.estado === 'pendiente');
   urlPago = computed(() => this.pedido()?.pago?.url_pago || this.enlaceNuevo());
