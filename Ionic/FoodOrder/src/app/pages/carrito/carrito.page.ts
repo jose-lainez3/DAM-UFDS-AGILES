@@ -92,6 +92,23 @@ interface Mesa {
           <ion-item><ion-label><strong>Total</strong></ion-label><ion-note slot="end" color="dark"><strong>{{ total() | currency: 'USD' }}</strong></ion-note></ion-item>
         </ion-list>
 
+        <ion-list [inset]="true">
+          <ion-item lines="none"><ion-label><strong>Método de pago</strong></ion-label></ion-item>
+          <ion-radio-group [value]="metodoPago()" (ionChange)="seleccionarMetodoPago($event.detail.value)">
+            <ion-item>
+              <ion-radio value="local" labelPlacement="start" justify="space-between">Pagar en el restaurante</ion-radio>
+            </ion-item>
+            <ion-item [disabled]="!pagosOnlineDisponibles()">
+              <ion-radio value="wompi" labelPlacement="start" justify="space-between">Pagar en línea con Wompi</ion-radio>
+            </ion-item>
+          </ion-radio-group>
+          @if (!pagosOnlineDisponibles()) {
+            <ion-item lines="none">
+              <ion-note color="medium">Pago con tarjeta pendiente de activación por el restaurante.</ion-note>
+            </ion-item>
+          }
+        </ion-list>
+
         <div class="ion-padding"><ion-button fill="clear" color="medium" (click)="cart.vaciar()">Vaciar carrito</ion-button></div>
       }
     </ion-content>
@@ -130,6 +147,8 @@ export class CarritoPage {
   mesasDisponibles = signal<Mesa[]>([]);
   mesaSeleccionada = signal<number | 'llevar' | null>(null);
   tasa = signal(0.13);
+  metodoPago = signal<'local' | 'wompi'>('local');
+  pagosOnlineDisponibles = signal(false);
 
   impuestos = computed(() => Number((this.cart.subtotal() * this.tasa()).toFixed(2)));
   total = computed(() => Number((this.cart.subtotal() + this.impuestos()).toFixed(2)));
@@ -143,8 +162,13 @@ export class CarritoPage {
       next: (c) => {
         const tasa = Number(c.tasa_impuesto);
         if (Number.isFinite(tasa)) this.tasa.set(tasa);
+        this.pagosOnlineDisponibles.set(Boolean(c.pagos_en_linea));
+        if (!c.pagos_en_linea) this.metodoPago.set('local');
       },
-      error: () => undefined,
+      error: () => {
+        this.pagosOnlineDisponibles.set(false);
+        this.metodoPago.set('local');
+      },
     });
     this.cargarMesas();
   }
@@ -175,6 +199,11 @@ export class CarritoPage {
     this.mesaSeleccionada.set(valor);
   }
 
+  seleccionarMetodoPago(valor: 'local' | 'wompi') {
+    if (valor === 'wompi' && !this.pagosOnlineDisponibles()) return;
+    this.metodoPago.set(valor === 'wompi' ? 'wompi' : 'local');
+  }
+
   irAlMenu() {
     this.router.navigateByUrl('/tabs/menu');
   }
@@ -195,6 +224,11 @@ export class CarritoPage {
       return;
     }
 
+    if (this.metodoPago() === 'wompi' && !this.pagosOnlineDisponibles()) {
+      (await this.toast.create({ message: 'Wompi todavía no está disponible.', duration: 2500, color: 'warning' })).present();
+      return;
+    }
+
     this.enviando.set(true);
     // El backend DEBE resolver cliente_id desde el usuario autenticado.
     this.api.crearPedido({
@@ -203,11 +237,26 @@ export class CarritoPage {
       detalles: this.cart.lineas().map(l => ({ producto_id: l.producto.id, cantidad: l.cantidad })),
     }).subscribe({
       next: async (r) => {
-        this.enviando.set(false);
         this.cart.vaciar();
         this.mesaSeleccionada.set(null);
-        (await this.toast.create({ message: `Pedido #${r.data.id} enviado.`, duration: 2000, color: 'success' })).present();
-        this.router.navigate(['/tabs/pedido', r.data.id]);
+        if (this.metodoPago() === 'wompi') {
+          this.api.iniciarPagoWompi(r.data.id).subscribe({
+            next: async () => {
+              this.enviando.set(false);
+              (await this.toast.create({ message: 'Pedido creado. Abre Wompi desde el detalle para pagar.', duration: 3200, color: 'success' })).present();
+              this.router.navigate(['/tabs/pedido', r.data.id]);
+            },
+            error: async (e) => {
+              this.enviando.set(false);
+              (await this.toast.create({ message: `Pedido #${r.data.id} creado, pero no se pudo iniciar el pago: ${errorMessage(e)}`, duration: 4500, color: 'warning' })).present();
+              this.router.navigate(['/tabs/pedido', r.data.id]);
+            },
+          });
+        } else {
+          this.enviando.set(false);
+          (await this.toast.create({ message: `Pedido #${r.data.id} enviado.`, duration: 2000, color: 'success' })).present();
+          this.router.navigate(['/tabs/pedido', r.data.id]);
+        }
       },
       error: async (e) => {
         this.enviando.set(false);
