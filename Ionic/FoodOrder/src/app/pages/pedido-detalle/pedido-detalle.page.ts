@@ -64,11 +64,19 @@ import { COLOR_ESTADO, ESTADOS, Pedido } from '../../core/models';
         </ion-list>
 
         <div class="acciones">
-          @if (puedePagar()) {
+          @if (puedePagar() && !urlPago()) {
             <ion-button expand="block" [disabled]="actualizando()" (click)="pagarEnLinea()">
-              @if (actualizando()) { <ion-spinner name="dots" /> } @else { Pagar en línea con Wompi }
+              @if (actualizando()) { <ion-spinner name="dots" /> } @else { Preparar pago con Wompi }
             </ion-button>
-            <ion-note>El pago se abre en el sitio seguro de Wompi. Regresa a este pedido y pulsa Actualizar para verificarlo.</ion-note>
+          }
+          @if (puedePagar() && urlPago()) {
+            <ion-button expand="block" [href]="urlPago()" target="_blank" rel="noopener noreferrer">
+              Abrir pago seguro con Wompi
+            </ion-button>
+            <ion-note>El pago se completa en Wompi. Al volver, actualiza este pedido para verificar la confirmación.</ion-note>
+          }
+          @if (!pagosOnlineDisponibles() && !p.pago && p.estado !== 'pagado' && p.estado !== 'cancelado') {
+            <ion-note color="medium">El pago en línea se habilitará cuando el restaurante active Wompi.</ion-note>
           }
           @if (pagoPendiente()) {
             <ion-note color="warning">Si ya pagaste, espera la confirmación. No intentes pagar dos veces.</ion-note>
@@ -102,20 +110,27 @@ export class PedidoDetallePage {
   cargando = signal(true);
   actualizando = signal(false);
   error = signal('');
+  pagosOnlineDisponibles = signal(false);
+  enlaceNuevo = signal('');
 
   etiqueta = computed(() => (this.pedido() ? ESTADOS[this.pedido()!.estado] : ''));
   color = computed(() => (this.pedido() ? COLOR_ESTADO[this.pedido()!.estado] : 'medium'));
   puedeCancelar = computed(() => this.pedido()?.estado === 'pendiente' && !this.pedido()?.pago);
   pagoPendiente = computed(() => this.pedido()?.pago?.estado === 'pendiente');
+  urlPago = computed(() => this.pedido()?.pago?.url_pago || this.enlaceNuevo());
   puedePagar = computed(() => {
     const pedido = this.pedido();
-    return !!pedido && !['pagado', 'cancelado'].includes(pedido.estado)
+    return !!pedido && this.pagosOnlineDisponibles() && !['pagado', 'cancelado'].includes(pedido.estado)
       && (!pedido.pago || pedido.pago.estado === 'pendiente');
   });
   subtotal = computed(() => (this.pedido()?.detalles ?? []).reduce((s, d) => s + Number(d.subtotal), 0));
   impuestos = computed(() => Math.max(0, Number(this.pedido()?.precio_total ?? 0) - this.subtotal()));
 
   ionViewWillEnter() {
+    this.api.configuracion().subscribe({
+      next: c => this.pagosOnlineDisponibles.set(Boolean(c.pagos_en_linea)),
+      error: () => this.pagosOnlineDisponibles.set(false),
+    });
     this.cargar();
   }
 
@@ -144,9 +159,9 @@ export class PedidoDetallePage {
           (await this.toast.create({ message: 'Wompi devolvió una dirección inválida.', duration: 3500, color: 'danger' })).present();
           return;
         }
-        // El navegador externo funciona también en Android y evita capturar tarjetas en Ionic.
-        window.open(respuesta.url_pago, '_blank', 'noopener,noreferrer');
+        this.enlaceNuevo.set(respuesta.url_pago);
         this.cargar();
+        (await this.toast.create({ message: 'Enlace preparado. Toca Abrir pago seguro con Wompi.', duration: 3500, color: 'success' })).present();
       },
       error: async (e) => {
         this.actualizando.set(false);
