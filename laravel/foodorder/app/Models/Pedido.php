@@ -32,6 +32,12 @@ class Pedido extends Model
         'fecha_pedido' => 'datetime',
     ];
 
+    // Cobro electrónico (si fue solicitado por el cliente).
+    public function pago()
+    {
+        return $this->hasOne(Pago::class, 'pedido_id');
+    }
+
     // Relación: Un pedido pertenece a un cliente
     public function cliente()
     {

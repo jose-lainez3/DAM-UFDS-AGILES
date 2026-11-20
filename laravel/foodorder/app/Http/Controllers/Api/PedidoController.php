@@ -13,7 +13,7 @@ use Illuminate\Validation\ValidationException;
 
 class PedidoController extends Controller
 {
-    private const RELACIONES = ['cliente', 'mesa', 'usuario', 'detalles.producto'];
+    private const RELACIONES = ['cliente', 'mesa', 'usuario', 'detalles.producto', 'pago'];
 
     private function esCliente($usuario): bool
     {
@@ -217,6 +217,34 @@ class PedidoController extends Controller
                 }
             }
 
+            $pago = $pedido->pago()->first();
+            if ($pago) {
+                if (array_key_exists('precio_total', $validated)
+                    && round((float) $validated['precio_total'], 2) !== round((float) $pedido->precio_total, 2)) {
+                    throw ValidationException::withMessages([
+                        'precio_total' => 'No se puede cambiar el importe de un pedido con un enlace de pago.',
+                    ]);
+                }
+
+                if ($estado === 'cancelado' && $pago->estado !== 'pendiente') {
+                    throw ValidationException::withMessages([
+                        'estado' => 'El cobro fue registrado. Para cancelar se requiere revisar un reembolso.',
+                    ]);
+                }
+
+                if ($estado === 'cancelado' && $pago->estado === 'pendiente') {
+                    throw ValidationException::withMessages([
+                        'estado' => 'Hay un enlace de pago activo. Contacta al administrador para anularlo.',
+                    ]);
+                }
+
+                if ($estado === 'pagado' && $pago->estado !== 'pagado') {
+                    throw ValidationException::withMessages([
+                        'estado' => 'Espera la confirmación de Wompi antes de cerrar el pedido.',
+                    ]);
+                }
+            }
+
             $pedido->update($validated);
 
             if ($anterior && ($anterior != $pedido->mesa_id || !$activo)) {
@@ -241,6 +269,7 @@ class PedidoController extends Controller
 
         DB::transaction(function () use ($pedido) {
             $pedido = Pedido::whereKey($pedido->id)->lockForUpdate()->firstOrFail();
+            abort_if($pedido->pago()->exists(), 409, 'No se puede borrar un pedido con un enlace de pago.');
             $mesaId = $pedido->mesa_id;
             if ($mesaId) {
                 Mesa::whereKey($mesaId)->lockForUpdate()->first();
