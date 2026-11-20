@@ -52,7 +52,7 @@ class WompiService
             'esMontoEditable' => false,
             'esCantidadEditable' => false,
             'cantidadPorDefecto' => 1,
-            'urlWebhook' => route('webhooks.wompi'),
+            'urlWebhook' => rtrim((string) config('app.url'), '/') . '/api/webhooks/wompi',
             'notificarTransaccionCliente' => false,
         ];
 
