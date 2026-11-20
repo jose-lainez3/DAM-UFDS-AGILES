@@ -43,6 +43,7 @@
                 <strong>Pago: </strong>
                 <span v-if="pedido.pago?.estado === 'pagado'">Pagado mediante Wompi</span>
                 <span v-else-if="pedido.pago?.estado === 'revision'">Cobro en revisión</span>
+                <span v-else-if="pedido.pago?.estado === 'prueba'">Pago simulado Wompi (sin dinero real)</span>
                 <span v-else-if="pedido.pago">Pendiente de confirmación Wompi</span>
                 <span v-else>Sin cobro electrónico registrado (pago en local)</span>
             </section>
