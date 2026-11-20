@@ -6,12 +6,14 @@ on:
     paths:
       - 'Ionic/FoodOrder/**'
       - 'laravel/foodorder/**'
+      - 'vue/foodorder/**'
       - '.github/workflows/foodorder-payments-check.yml'
   push:
-    branches: [feature/wompi-foodorder]
+    branches: [feature/wompi-foodorder, feature/foodorder-dte-wompi]
     paths:
       - 'Ionic/FoodOrder/**'
       - 'laravel/foodorder/**'
+      - 'vue/foodorder/**'
       - '.github/workflows/foodorder-payments-check.yml'
 
 permissions:
@@ -36,8 +38,26 @@ jobs:
       - name: Compilar Ionic produccion
         run: npm run build -- --configuration production
 
+  vue-build:
+    name: Compilar administrador Vue
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vue/foodorder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: vue/foodorder/package-lock.json
+      - name: Instalar dependencias
+        run: npm ci --no-audit --no-fund
+      - name: Compilar Vue
+        run: npm run build
+
   laravel-tests:
-    name: Validar API Wompi
+    name: Validar API Wompi y facturación electrónica
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -56,5 +76,11 @@ jobs:
           php -l app/Services/WompiService.php
           php -l app/Http/Controllers/Api/PagoController.php
           php -l app/Http/Controllers/Api/WompiWebhookController.php
-      - name: Probar autenticacion webhook
+          php -l app/Services/LumenDteService.php
+          php -l app/Http/Controllers/Api/DocumentoFiscalController.php
+          php -l app/Models/DocumentoFiscal.php
+          php -l database/migrations/2026_11_20_000002_create_documentos_fiscales_table.php
+      - name: Probar autenticación de webhook Wompi
         run: php artisan test --filter=WompiWebhookTest
+      - name: Probar controles de emisión fiscal
+        run: php artisan test --filter=LumenDteServiceTest
