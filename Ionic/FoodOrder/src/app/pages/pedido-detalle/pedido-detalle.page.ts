@@ -45,6 +45,20 @@ import { COLOR_ESTADO, ESTADOS, Pedido } from '../../core/models';
               </ion-note>
             </ion-item>
           }
+          @if (p.documento_fiscal; as dte) {
+            <ion-item>
+              <ion-label>Factura electrónica</ion-label>
+              <ion-badge slot="end" [color]="dte.estado === 'emitido' ? 'success' : dte.estado === 'rechazado' ? 'danger' : 'medium'">
+                {{ dte.estado === 'emitido' ? 'DTE emitido' : dte.estado === 'prueba' ? 'DTE de pruebas' : dte.estado === 'borrador' ? 'Borrador sin validez fiscal' : dte.estado }}
+              </ion-badge>
+            </ion-item>
+            @if (dte.ambiente === 'SANDBOX') {
+              <ion-item><ion-note color="warning">Documento de pruebas; no tiene validez fiscal.</ion-note></ion-item>
+            }
+            @if (dte.codigo_generacion) {
+              <ion-item><ion-label class="ion-text-wrap">Código DTE: {{ dte.codigo_generacion }}</ion-label></ion-item>
+            }
+          }
           <ion-item>
             <ion-label>Fecha</ion-label>
             <ion-note slot="end">{{ p.fecha_pedido ?? p.created_at | date: 'dd/MM HH:mm' }}</ion-note>
@@ -71,6 +85,17 @@ import { COLOR_ESTADO, ESTADOS, Pedido } from '../../core/models';
         </ion-list>
 
         <div class="acciones">
+          @if (puedeDescargarDte()) {
+            @if (!urlPdfDte()) {
+              <ion-button expand="block" fill="outline" [disabled]="consultandoDte()" (click)="prepararPdfDte()">
+                @if (consultandoDte()) { <ion-spinner name="dots" /> } @else { Preparar factura PDF }
+              </ion-button>
+            } @else {
+              <ion-button expand="block" [href]="urlPdfDte()" target="_blank" rel="noopener noreferrer">
+                Abrir factura PDF
+              </ion-button>
+            }
+          }
           @if (puedePagar() && !urlPago()) {
             <ion-button expand="block" [disabled]="actualizando()" (click)="pagarEnLinea()">
               @if (actualizando()) { <ion-spinner name="dots" /> } @else { Preparar pago con Wompi }
@@ -119,6 +144,8 @@ export class PedidoDetallePage {
   error = signal('');
   pagosOnlineDisponibles = signal(false);
   enlaceNuevo = signal('');
+  urlPdfDte = signal('');
+  consultandoDte = signal(false);
 
   etiqueta = computed(() => (this.pedido() ? ESTADOS[this.pedido()!.estado] : ''));
   color = computed(() => (this.pedido() ? COLOR_ESTADO[this.pedido()!.estado] : 'medium'));
@@ -126,6 +153,7 @@ export class PedidoDetallePage {
     const pedido = this.pedido();
     if (!pedido) return '';
     if (pedido.pago?.estado === 'pagado') return 'Pagado con Wompi';
+    if (pedido.pago?.estado === 'prueba') return 'Pago simulado Wompi';
     if (pedido.pago?.estado === 'revision') return 'Cobro en revisión';
     if (pedido.pago?.estado === 'pendiente') return 'Pendiente en Wompi';
     if (pedido.estado === 'pagado') return 'Pagado en el local';
@@ -135,6 +163,7 @@ export class PedidoDetallePage {
   colorPago = computed(() => {
     const pedido = this.pedido();
     if (pedido?.pago?.estado === 'pagado') return 'success';
+    if (pedido?.pago?.estado === 'prueba') return 'medium';
     if (pedido?.pago?.estado === 'revision') return 'danger';
     if (pedido?.estado === 'pagado') return 'success';
     if (pedido?.estado === 'cancelado') return 'medium';
@@ -142,6 +171,7 @@ export class PedidoDetallePage {
   });
   puedeCancelar = computed(() => this.pedido()?.estado === 'pendiente' && !this.pedido()?.pago);
   pagoPendiente = computed(() => this.pedido()?.pago?.estado === 'pendiente');
+  puedeDescargarDte = computed(() => ['emitido', 'prueba', 'borrador'].includes(this.pedido()?.documento_fiscal?.estado || ''));
   urlPago = computed(() => this.pedido()?.pago?.url_pago || this.enlaceNuevo());
   puedePagar = computed(() => {
     const pedido = this.pedido();
@@ -160,6 +190,7 @@ export class PedidoDetallePage {
   }
 
   cargar() {
+    this.urlPdfDte.set('');
     this.cargando.set(true);
     this.api.pedido(this.id()).subscribe({
       next: (p) => {
@@ -170,6 +201,25 @@ export class PedidoDetallePage {
         this.pedido.set(null);
         this.error.set(e?.status === 404 ? `El pedido #${this.id()} no existe.` : errorMessage(e, 'No se pudo cargar el pedido.'));
         this.cargando.set(false);
+      },
+    });
+  }
+
+  prepararPdfDte() {
+    if (this.consultandoDte()) return;
+    this.consultandoDte.set(true);
+    this.api.archivoDte(this.id(), 'pdf').subscribe({
+      next: async (r) => {
+        this.consultandoDte.set(false);
+        if (r.url.startsWith('https://')) {
+          this.urlPdfDte.set(r.url);
+        } else {
+          (await this.toast.create({ message: 'Enlace de DTE no válido.', duration: 3000, color: 'danger' })).present();
+        }
+      },
+      error: async (e) => {
+        this.consultandoDte.set(false);
+        (await this.toast.create({ message: errorMessage(e, 'No se pudo obtener la factura.'), duration: 3500, color: 'danger' })).present();
       },
     });
   }

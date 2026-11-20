@@ -36,6 +36,13 @@ export class ApiService {
     );
   }
 
+  archivoDte(id: number | string, formato: 'pdf' | 'json') {
+    return this.http.get<{ url: string; es_fiscal: boolean }>(
+      `${this.base}/pedidos/${id}/factura/archivo`,
+      { params: new HttpParams().set('formato', formato) },
+    );
+  }
+
   cancelarPedido(id: number) {
     return this.http.put<{ message: string; data: Pedido }>(`${this.base}/pedidos/${id}`, { estado: 'cancelado' });
   }
