@@ -76,6 +76,9 @@ class LumenDteService
                 || abs($subtotal - (float) $detalle->subtotal) > 0.005) {
                 throw ValidationException::withMessages(['factura' => 'Existe un detalle sin precio o sin conciliación.']);
             }
+            if (!$detalle->producto) {
+                throw ValidationException::withMessages(['factura' => 'No se puede emitir un DTE si el producto del pedido fue eliminado.']);
+            }
             $conIva = round($unitario * (1 + $tasa), 6);
             $suma += $conIva * $cantidad;
             $items[] = [
